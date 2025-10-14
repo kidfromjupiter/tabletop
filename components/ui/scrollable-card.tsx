@@ -13,7 +13,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Item } from "./repeating-card-stack";
+import { Item } from "./repeating-card-stack/types";
 
 const PRESS_DURATION = 200;
 

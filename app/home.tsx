@@ -1,4 +1,6 @@
-import RepeatingCardStack, { Item } from "@/components/ui/repeating-card-stack";
+//import RepeatingCardStack, { Item } from "@/components/ui/repeating-card-stack";
+//import RepeatingCardStack from "@/components/ui/repeating-card-stack";
+import { Item } from "@/components/ui/repeating-card-stack/types";
 import { ScrollableCard } from "@/components/ui/scrollable-card";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -11,6 +13,7 @@ import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
 } from "react-native-reanimated";
+import RepeatingCardStack from "../components/ui/repeating-card-stack";
 
 const { width } = Dimensions.get("screen");
 const CARD_WIDTH = width * 0.45;
@@ -27,7 +30,6 @@ const handData: Item[] = [
   { id: "8", title: "Card 8", color: "#0ec98aff" },
 ];
 export default function App() {
-  const [resetKey, setResetKey] = useState(0);
   const [cards, setCards] = useState(data);
   const [hand, setHand] = useState(handData);
 
@@ -76,15 +78,16 @@ export default function App() {
             keyExtractor={(item) => item.id}
             // Animate item reflow on insert/remove/reorder
             itemLayoutAnimation={LinearTransition.springify()
-              .damping(18)
-              .stiffness(180)}
+              .damping(15)
+              .stiffness(450)
+              .mass(0.6)}
             renderItem={({ item, index }) => (
               <Animated.View
                 // This layout prop lets siblings reflow smoothly when items are removed.
                 layout={LinearTransition.springify()
-                  .damping(22)
-                  .stiffness(380)
-                  .energyThreshold(0.01)}
+                  .damping(12)
+                  .stiffness(500)
+                  .mass(0.4)}
                 style={{ width: CARD_WIDTH }}
                 entering={FadeIn}
                 exiting={FadeOut}
