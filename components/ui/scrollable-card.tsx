@@ -24,13 +24,21 @@ export function ScrollableCard({
   index,
   id,
   callback,
+  rotation = 0,
+  inverted = false,
+  displayedRangeFromCenter = 1,
+  yRange = 20,
 }: {
+  inverted?: boolean;
   data: Item;
+  displayedRangeFromCenter?: number;
   style?: any;
   scrollX: SharedValue<number>;
   index: number;
   id: string;
   callback: (id: string) => void;
+  rotation?: number;
+  yRange?: number;
 }) {
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -53,16 +61,52 @@ export function ScrollableCard({
       runOnJS(callback)(id);
     });
   const animatedStyles = useAnimatedStyle(() => {
-    initialY.value = interpolate(
-      scrollX.value,
-      [index - 1, index, index + 1],
-      [20, 0, 20]
-    );
+    let rot;
+    if (!inverted) {
+      initialY.value = interpolate(
+        scrollX.value,
+        [
+          index - displayedRangeFromCenter,
+          index,
+          index + displayedRangeFromCenter,
+        ],
+        [yRange, 0, yRange]
+      );
+      rot = interpolate(
+        scrollX.value,
+        [
+          index - displayedRangeFromCenter,
+          index,
+          index + displayedRangeFromCenter,
+        ],
+        [rotation, 0, -rotation]
+      );
+    } else {
+      initialY.value = interpolate(
+        scrollX.value,
+        [
+          index - displayedRangeFromCenter,
+          index,
+          index + displayedRangeFromCenter,
+        ],
+        [-yRange, 0, -yRange]
+      );
+      rot = interpolate(
+        scrollX.value,
+        [
+          index - displayedRangeFromCenter,
+          index,
+          index + displayedRangeFromCenter,
+        ],
+        [-rotation, 0, rotation]
+      );
+    }
     return {
       transform: [
         {
           translateY: initialY.value,
         },
+        { rotate: `${rot}deg` },
       ],
     };
   });

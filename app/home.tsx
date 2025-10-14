@@ -1,15 +1,11 @@
 //import RepeatingCardStack, { Item } from "@/components/ui/repeating-card-stack";
 //import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { Item } from "@/components/ui/repeating-card-stack/types";
-import { ScrollableCard } from "@/components/ui/scrollable-card";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, {
-  FadeIn,
-  FadeOut,
-  LinearTransition,
+import {
   useAnimatedScrollHandler,
   useSharedValue,
 } from "react-native-reanimated";
@@ -17,6 +13,9 @@ import RepeatingCardStack from "../components/ui/repeating-card-stack";
 
 const { width } = Dimensions.get("screen");
 const CARD_WIDTH = width * 0.45;
+const OPP_CARD_WIDTH = width * 0.25;
+const OPP_GAP = 3;
+const CARD_GAP = 5;
 
 const data: Item[] = [
   { id: "1", title: "Card 1", color: "#ffadad" },
@@ -28,14 +27,27 @@ const handData: Item[] = [
   { id: "6", title: "Card 6", color: "#8b2525ff" },
   { id: "7", title: "Card 7", color: "#e7942eff" },
   { id: "8", title: "Card 8", color: "#0ec98aff" },
+  { id: "9", title: "Card 6", color: "#8b2525ff" },
+  { id: "10", title: "Card 7", color: "#e7942eff" },
+  { id: "11", title: "Card 8", color: "#0ec98aff" },
 ];
+
+import SelfHand from "@/components/ui/hand-flatlist";
+import OpponentHand from "@/components/ui/opponent-hand";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 export default function App() {
   const [cards, setCards] = useState(data);
   const [hand, setHand] = useState(handData);
 
   const scrollX = useSharedValue<number>(0);
+  const oppScrollX = useSharedValue<number>(0);
+
   const onScroll = useAnimatedScrollHandler((e) => {
-    scrollX.value = e.contentOffset.x / (CARD_WIDTH + 5);
+    scrollX.value = e.contentOffset.x / (CARD_WIDTH + CARD_GAP);
+  });
+  const oppOnScroll = useAnimatedScrollHandler((e) => {
+    oppScrollX.value = e.contentOffset.x / (OPP_CARD_WIDTH + OPP_GAP);
   });
 
   const removeById = (id: string) => {
@@ -49,69 +61,42 @@ export default function App() {
 
   return (
     <GestureHandlerRootView>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <StatusBar style="light" />
+        <View style={{ flex: 1, width: "100%" }}>
+          <OpponentHand
+            hand={hand}
+            removeById={removeById}
+            scrollX={oppScrollX}
+            onScroll={oppOnScroll}
+            card_width={OPP_CARD_WIDTH}
+            gap={OPP_GAP}
+          />
+        </View>
 
-        <View style={{ flex: 1, width: "100%", justifyContent: "center" }}>
+        <View style={{ flex: 2, width: "100%", justifyContent: "center" }}>
           <RepeatingCardStack data={cards} cardHeight={300} />
         </View>
 
         <View
           style={{
-            flex: 1,
+            flex: 2,
             width: "100%",
             overflow: "visible",
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <Animated.FlatList
-            data={hand}
-            contentContainerStyle={{
-              paddingHorizontal: (width - CARD_WIDTH) / 2,
-              gap: 5,
-              alignItems: "center",
-            }}
-            snapToInterval={CARD_WIDTH + 5}
-            horizontal
-            decelerationRate={"fast"}
-            keyExtractor={(item) => item.id}
-            // Animate item reflow on insert/remove/reorder
-            itemLayoutAnimation={LinearTransition.springify()
-              .damping(15)
-              .stiffness(450)
-              .mass(0.6)}
-            renderItem={({ item, index }) => (
-              <Animated.View
-                // This layout prop lets siblings reflow smoothly when items are removed.
-                layout={LinearTransition.springify()
-                  .damping(12)
-                  .stiffness(500)
-                  .mass(0.4)}
-                style={{ width: CARD_WIDTH }}
-                entering={FadeIn}
-                exiting={FadeOut}
-              >
-                <ScrollableCard
-                  data={item}
-                  style={{
-                    width: "100%",
-                    overflow: "visible",
-                  }}
-                  scrollX={scrollX}
-                  index={index}
-                  id={item.id}
-                  callback={removeById}
-                />
-              </Animated.View>
-            )}
-            showsHorizontalScrollIndicator={false}
+          <SelfHand
+            gap={CARD_GAP}
+            hand={hand}
+            removeById={removeById}
+            scrollX={scrollX}
             onScroll={onScroll}
-            removeClippedSubviews={false}
-            scrollEventThrottle={16}
+            card_width={CARD_WIDTH}
           />
         </View>
-      </View>
+      </SafeAreaView>
     </GestureHandlerRootView>
   );
 }
