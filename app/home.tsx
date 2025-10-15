@@ -32,6 +32,7 @@ const handData: Item[] = [
   { id: "11", title: "Card 8", color: "#0ec98aff" },
 ];
 
+import { Button } from "@/components/ui/button";
 import SelfHand from "@/components/ui/hand-flatlist";
 import OpponentHand from "@/components/ui/opponent-hand";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -73,6 +74,7 @@ export default function App() {
             gap={OPP_GAP}
           />
         </View>
+        <Button title="test" variant={"secondary"} />
 
         <View style={{ flex: 2, width: "100%", justifyContent: "center" }}>
           <RepeatingCardStack data={cards} cardHeight={300} />
