@@ -1,6 +1,7 @@
 //import RepeatingCardStack, { Item } from "@/components/ui/repeating-card-stack";
 //import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { Item } from "@/components/ui/repeating-card-stack/types";
+import Constants from "expo-constants";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
@@ -37,7 +38,9 @@ import SelfHand from "@/components/ui/hand-flatlist";
 import OpponentHand from "@/components/ui/opponent-hand";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function App() {
+export default function PlayerView() {
+  console.log(Constants.systemFonts);
+
   const [cards, setCards] = useState(data);
   const [hand, setHand] = useState(handData);
 
