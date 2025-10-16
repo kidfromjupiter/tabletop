@@ -1,6 +1,8 @@
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import Counter from "@/components/ui/counter";
 import { Toggle } from "@/components/ui/toggle";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import * as React from "react";
 import {
   Alert,
@@ -104,11 +106,13 @@ export default function CreateGameScreen({
       packs: Array.from(new Set(normalized)),
     };
     onStart?.(settings);
+    router.push("/lobby");
   }
 
   function regenerateCode() {
     setRoomCode(makeRoomCode());
   }
+  const router = useRouter();
 
   // ---------------- Render ----------------
   return (
@@ -116,11 +120,14 @@ export default function CreateGameScreen({
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" onPress={onBack} hitSlop={10}>
-          <Text style={[styles.link, { color: isDark ? "#CFCFCF" : "#333" }]}>
-            ‹ Back
-          </Text>
-        </Pressable>
+        <IconButton
+          variant="ghost"
+          onPress={() => {
+            router.back();
+          }}
+        >
+          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
+        </IconButton>
         <Text style={[styles.title, { color: isDark ? "#fff" : "#0B0B0B" }]}>
           Create Game
         </Text>

@@ -1,6 +1,7 @@
 import type { RevealItem } from "@/app/round-results";
 import { RevealRow } from "@/components/pages/round-results/reveal-row";
 import { Button, IconButton } from "@/components/ui/button";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, useColorScheme, View } from "react-native";
 import Animated, {
@@ -67,7 +68,7 @@ export default function RevealSequenceScreen({
       {/* Header */}
       <View style={styles.header}>
         <IconButton variant="ghost" onPress={onBack}>
-          ←
+          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
         </IconButton>
         <Text style={[styles.title, { color: isDark ? "#fff" : "#111" }]}>
           Reveal

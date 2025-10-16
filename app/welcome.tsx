@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useRouter } from "expo-router";
 import * as React from "react";
 import {
   Image,
@@ -43,6 +44,7 @@ export default function WelcomeScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const router = useRouter();
 
   // tiny bob animation for logo
   const bob = useSharedValue(0);
@@ -138,7 +140,10 @@ export default function WelcomeScreen({
         <View style={{ gap: 12, width: "100%", marginTop: 20 }}>
           <Animated.View entering={FadeInDown.delay(60).springify()}>
             <Button
-              onPress={onCreateGame}
+              onPress={() => {
+                router.push("/create-game");
+                onCreateGame?.();
+              }}
               title="Create Game"
               variant="primary"
             />
@@ -146,7 +151,10 @@ export default function WelcomeScreen({
 
           <Animated.View entering={FadeInDown.delay(120).springify()}>
             <Button
-              onPress={onJoinGame}
+              onPress={() => {
+                router.push("/join-game");
+                onJoinGame?.();
+              }}
               title="Join Game"
               variant="secondary"
             />

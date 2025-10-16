@@ -12,6 +12,7 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 //import { Button, IconButton } from "./ui.buttons";
 import { Button, IconButton } from "@/components/ui/button";
+import { Ionicons } from "@expo/vector-icons";
 
 /**
  * RevealAndResultsScreens.tsx
@@ -70,7 +71,7 @@ export default function RoundResultsScreen({
       {/* Header */}
       <View style={styles.header}>
         <IconButton variant="ghost" onPress={onBackToLobby}>
-          ←
+          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
         </IconButton>
         <Text style={[styles.title, { color: isDark ? "#fff" : "#111" }]}>
           Round Results

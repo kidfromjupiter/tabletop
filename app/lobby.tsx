@@ -2,6 +2,7 @@ import PlayerCard from "@/components/pages/lobby/player-card";
 import RoomCard from "@/components/pages/lobby/room-card";
 import Rules from "@/components/pages/lobby/rules";
 import { Button, IconButton } from "@/components/ui/button";
+import { Ionicons } from "@expo/vector-icons";
 import * as React from "react";
 import {
   FlatList,
@@ -122,7 +123,7 @@ export default function LobbyScreen({
       {/* Header */}
       <View style={styles.header}>
         <IconButton variant="ghost" onPress={onLeave}>
-          ←
+          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
         </IconButton>
         <Text style={[styles.title, { color: headerFg }]}>Lobby</Text>
         <View style={{ width: 44 }} />

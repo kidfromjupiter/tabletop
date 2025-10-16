@@ -8,9 +8,11 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 
 /**
@@ -72,7 +74,10 @@ export function Button({
         testID={testID}
         disabled={disabled || loading}
         onPressIn={() =>
-          (scale.value = withSpring(0.98, { stiffness: 520, damping: 24 }))
+          (scale.value = withTiming(0.95, {
+            duration: 80,
+            easing: Easing.out(Easing.quad),
+          }))
         }
         onPressOut={() => (scale.value = withSpring(1))}
         onPress={onPress}

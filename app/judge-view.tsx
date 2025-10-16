@@ -1,6 +1,7 @@
 import SubmissionCard from "@/components/pages/judges-view/submissions-card";
 import { Button, IconButton } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Ionicons } from "@expo/vector-icons";
 import * as React from "react";
 import { FlatList, StyleSheet, Text, useColorScheme, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -77,7 +78,7 @@ export default function JudgeViewScreen({
       {/* Header */}
       <View style={styles.header}>
         <IconButton variant="ghost" onPress={onBack}>
-          ←
+          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
         </IconButton>
         <Text style={[styles.title, { color: headerFg }]}>Judge</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
