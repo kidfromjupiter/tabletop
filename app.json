@@ -1,6 +1,6 @@
 {
   "expo": {
-    //"jsEngine": "hermes",
+    "jsEngine": "hermes",
     "name": "tabletop",
     "slug": "tabletop",
     "version": "1.0.0",

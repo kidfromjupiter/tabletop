@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useGameStore } from "@/lib/state";
 import { useRouter } from "expo-router";
 import * as React from "react";
 import {
@@ -45,6 +46,7 @@ export default function WelcomeScreen({
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
   const router = useRouter();
+  const toPhase = useGameStore((state) => state.toPhase);
 
   // tiny bob animation for logo
   const bob = useSharedValue(0);
@@ -142,6 +144,7 @@ export default function WelcomeScreen({
             <Button
               onPress={() => {
                 router.push("/create-game");
+                toPhase("create");
                 onCreateGame?.();
               }}
               title="Create Game"
@@ -153,6 +156,7 @@ export default function WelcomeScreen({
             <Button
               onPress={() => {
                 router.push("/join-game");
+                toPhase("join");
                 onJoinGame?.();
               }}
               title="Join Game"

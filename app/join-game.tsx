@@ -1,4 +1,5 @@
 import { Button, IconButton } from "@/components/ui/button"; // use latest buttons file name
+import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as React from "react";
@@ -55,8 +56,16 @@ export default function JoinGameScreen({
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
-  const [name, setName] = React.useState(defaultName);
-  const [code, setCode] = React.useState((defaultCode || "").toUpperCase());
+  // zustand
+  const toPhase = useGameStore((state) => state.toPhase);
+  const joinRoom = useGameStore((state) => state.joinRoom);
+  const roomName = useGameStore((state) => state.settings?.roomCode);
+  const displayName = useGameStore((state) => state.me?.name);
+
+  const [name, setName] = React.useState(displayName || defaultName);
+  const [code, setCode] = React.useState(
+    (roomName || defaultCode || "").toUpperCase()
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   const cardIn = useSharedValue(0);
@@ -86,6 +95,8 @@ export default function JoinGameScreen({
       setError("Please enter a display name.");
       return;
     }
+    toPhase("lobby");
+    joinRoom(c.toUpperCase(), trimmed);
     onJoin?.({ roomCode: c.toUpperCase(), name: trimmed });
   }
 
