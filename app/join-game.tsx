@@ -98,6 +98,7 @@ export default function JoinGameScreen({
     toPhase("lobby");
     joinRoom(c.toUpperCase(), trimmed);
     onJoin?.({ roomCode: c.toUpperCase(), name: trimmed });
+    router.push("/lobby");
   }
 
   async function handlePaste() {

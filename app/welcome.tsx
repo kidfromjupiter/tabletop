@@ -82,18 +82,6 @@ export default function WelcomeScreen({
           <Text style={[styles.title, { color: isDark ? "#fff" : "#0B0B0B" }]}>
             {appName}
           </Text>
-          <View
-            style={[
-              styles.tag,
-              { backgroundColor: isDark ? "#2A2A2A" : "#EFEFEF" },
-            ]}
-          >
-            <Text
-              style={[styles.tagText, { color: isDark ? "#CFCFCF" : "#333" }]}
-            >
-              v0.1
-            </Text>
-          </View>
         </Animated.View>
 
         {/* Hero */}

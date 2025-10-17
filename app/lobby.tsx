@@ -2,11 +2,13 @@ import PlayerCard from "@/components/pages/lobby/player-card";
 import RoomCard from "@/components/pages/lobby/room-card";
 import Rules from "@/components/pages/lobby/rules";
 import { Button, IconButton } from "@/components/ui/button";
+import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
 import * as React from "react";
 import {
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   useColorScheme,
@@ -48,9 +50,7 @@ export type LobbySettings = {
 
 export default function LobbyScreen({
   isHost,
-  players,
   meId,
-  settings,
   onStart,
   onToggleReady,
   onKick,
@@ -61,9 +61,7 @@ export default function LobbyScreen({
   onToggleFamilyMode,
 }: {
   isHost: boolean;
-  players: Player[];
   meId: string;
-  settings: LobbySettings;
   onStart?: () => void;
   onToggleReady?: (playerId: string) => void;
   onKick?: (playerId: string) => void;
@@ -75,6 +73,10 @@ export default function LobbyScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+
+  // zustand
+  const players = useGameStore((state) => state.players); // --- IGNORE ---
+  const settings = useGameStore((state) => state.settings); // --- IGNORE ---
 
   const allReady =
     players.length > 1 && players.every((p) => (p.isHost ? true : !!p.isReady));
@@ -120,84 +122,94 @@ export default function LobbyScreen({
     <SafeAreaView
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <IconButton variant="ghost" onPress={onLeave}>
-          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
-        </IconButton>
-        <Text style={[styles.title, { color: headerFg }]}>Lobby</Text>
-        <View style={{ width: 44 }} />
-      </View>
-
-      {/* Room Card */}
-      <RoomCard
-        settings={settings}
-        isDark={isDark}
-        pulseStyle={pulseStyle}
-        headerFg={headerFg}
-        onCopyInvite={onCopyInvite}
-      />
-
-      {/* Players */}
-      <Animated.View
-        entering={FadeIn.springify()}
-        style={[
-          styles.sectionCard,
-          { backgroundColor: isDark ? "#151515" : "#fff" },
-        ]}
-      >
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: headerFg }]}>
-            Players ({players.length})
-          </Text>
-          {isHost ? (
-            <Pressable onPress={onShuffleJudges}>
-              <Text
-                style={[styles.link, { color: isDark ? "#EDEDED" : "#4B3EF7" }]}
-              >
-                Shuffle judge order
-              </Text>
-            </Pressable>
-          ) : null}
+      <ScrollView>
+        {/* Header */}
+        <View style={styles.header}>
+          <IconButton variant="ghost" onPress={onLeave}>
+            <Ionicons
+              name="arrow-back-outline"
+              size={24}
+              color="currentColor"
+            />
+          </IconButton>
+          <Text style={[styles.title, { color: headerFg }]}>Lobby</Text>
+          <View style={{ width: 44 }} />
         </View>
-        <FlatList
-          data={players}
-          keyExtractor={(p) => p.id}
-          renderItem={renderPlayer}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-          contentContainerStyle={{ paddingTop: 4, paddingBottom: 8 }}
+
+        {/* Room Card */}
+        <RoomCard
+          settings={settings}
+          isDark={isDark}
+          pulseStyle={pulseStyle}
+          headerFg={headerFg}
+          onCopyInvite={onCopyInvite}
         />
-      </Animated.View>
 
-      {/* Rules & Packs Summary */}
-      <Rules
-        settings={settings}
-        isDark={isDark}
-        headerFg={headerFg}
-        onToggleFamilyMode={onToggleFamilyMode}
-      />
-
-      {/* Footer controls */}
-      <View style={{ height: 12 }} />
-      <View style={styles.footerBar}>
-        {isHost ? (
-          <Button title="Start Game" onPress={onStart} disabled={!allReady} />
-        ) : (
-          <Button
-            title={
-              players.find((p) => p.id === meId)?.isReady
-                ? "Unready"
-                : "I'm Ready"
-            }
-            variant={
-              players.find((p) => p.id === meId)?.isReady
-                ? "secondary"
-                : "primary"
-            }
-            onPress={() => onToggleReady?.(meId)}
+        {/* Players */}
+        <Animated.View
+          entering={FadeIn.springify()}
+          style={[
+            styles.sectionCard,
+            { backgroundColor: isDark ? "#151515" : "#fff" },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: headerFg }]}>
+              Players ({players.length})
+            </Text>
+            {isHost ? (
+              <Pressable onPress={onShuffleJudges}>
+                <Text
+                  style={[
+                    styles.link,
+                    { color: isDark ? "#EDEDED" : "#4B3EF7" },
+                  ]}
+                >
+                  Shuffle judge order
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+          <FlatList
+            data={players}
+            keyExtractor={(p) => p.id}
+            renderItem={renderPlayer}
+            scrollEnabled={false}
+            ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+            contentContainerStyle={{ paddingTop: 4, paddingBottom: 8 }}
           />
-        )}
-      </View>
+        </Animated.View>
+
+        {/* Rules & Packs Summary */}
+        <Rules
+          settings={settings}
+          isDark={isDark}
+          headerFg={headerFg}
+          onToggleFamilyMode={onToggleFamilyMode}
+        />
+
+        {/* Footer controls */}
+        <View style={{ height: 12 }} />
+        <View style={styles.footerBar}>
+          {isHost ? (
+            <Button title="Start Game" onPress={onStart} disabled={!allReady} />
+          ) : (
+            <Button
+              title={
+                players.find((p) => p.id === meId)?.isReady
+                  ? "Unready"
+                  : "I'm Ready"
+              }
+              variant={
+                players.find((p) => p.id === meId)?.isReady
+                  ? "secondary"
+                  : "primary"
+              }
+              onPress={() => onToggleReady?.(meId)}
+            />
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

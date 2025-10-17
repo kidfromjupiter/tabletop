@@ -58,7 +58,7 @@ export type StoreState = {
   me: { id: string; name: string; avatar?: string } | null;
   isHost: boolean;
   phase: Phase;
-  settings: GameSettings | null;
+  settings: GameSettings;
   players: Player[];
   lobby: LobbyMeta;
   round: RoundData | null;
@@ -155,8 +155,11 @@ const initialState: Omit<
   me: null,
   isHost: false,
   phase: "welcome",
-  settings: null,
-  players: [],
+  settings: initialSettings,
+  players: [
+    { id: "1", name: "Kavi", isHost: true, isReady: true },
+    { id: "2", name: "Alex", isReady: false },
+  ],
   lobby: { judgeOrder: [], judgeIndex: 0 },
   round: null,
   busy: false,
