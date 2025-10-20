@@ -1,7 +1,10 @@
 import { Button, IconButton } from "@/components/ui/button";
 import Counter from "@/components/ui/counter";
 import { Toggle } from "@/components/ui/toggle";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
+import { GameSettings, useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
+import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "expo-router";
 import * as React from "react";
 import {
@@ -24,38 +27,35 @@ import { SafeAreaView } from "react-native-safe-area-context";
  * Emits onStart(settings) with a normalized config object.
  */
 
-export type GameSettings = {
-  roomCode: string;
-  hostName: string;
-  isPrivate: boolean;
-  familyMode: boolean;
-  roundLimit: number; // 0 = unlimited
-  scoreLimit: number; // 0 = unlimited
-  handSize: number; // e.g., 10
-  packs: string[]; // pack IDs
-};
-
 export default function CreateGameScreen({
-  onStart,
   onBack,
   defaultName = "",
 }: {
-  onStart?: (settings: GameSettings) => void;
   onBack?: () => void;
   defaultName?: string;
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   // ---------------- State ----------------
   const [hostName, setHostName] = React.useState(defaultName);
-  const [roomCode, setRoomCode] = React.useState(makeRoomCode());
-  const [isPrivate, setIsPrivate] = React.useState(true);
-  const [familyMode, setFamilyMode] = React.useState(false);
-  const [roundLimit, setRoundLimit] = React.useState(8);
-  const [scoreLimit, setScoreLimit] = React.useState(10);
-  const [handSize, setHandSize] = React.useState(10);
-  const [selectedPacks, setSelectedPacks] = React.useState<string[]>(["base"]);
+  const updateSettings = useGameStore((state) => state.updateSettings);
+  const setMe = useGameStore((state) => state.setMe);
+  const roomCode = useGameStore((state) => state.settings.roomCode);
+  const isPrivate = useGameStore((state) => state.settings.isPrivate);
+  const familyMode = useGameStore((state) => state.settings.familyMode);
+  const roundLimit = useGameStore((state) => state.settings.roundLimit);
+  const scoreLimit = useGameStore((state) => state.settings.scoreLimit);
+  const handSize = useGameStore((state) => state.settings.handSize);
+  const selectedPacks = useGameStore((state) => state.settings.packs);
+  // const [roomCode, setRoomCode] = React.useState(makeRoomCode());
+  // const [isPrivate, setIsPrivate] = React.useState(true);
+  // const [familyMode, setFamilyMode] = React.useState(false);
+  // const [roundLimit, setRoundLimit] = React.useState(8);
+  // const [scoreLimit, setScoreLimit] = React.useState(10);
+  // const [handSize, setHandSize] = React.useState(10);
+  // const [selectedPacks, setSelectedPacks] = React.useState<string[]>(["base"]);
 
   // Demo pack list (IDs + human labels). Replace with your real catalog.
   const packs = React.useMemo(
@@ -71,12 +71,14 @@ export default function CreateGameScreen({
 
   // ---------------- Handlers ----------------
   function togglePack(id: string) {
-    setSelectedPacks((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+    updateSettings({
+      packs: selectedPacks.includes(id)
+        ? selectedPacks.filter((p) => p !== id)
+        : [...selectedPacks, id],
+    });
   }
 
-  function handleStart() {
+  async function handleStart() {
     if (!hostName.trim()) {
       Alert.alert("Missing name", "Please enter your display name.");
       return;
@@ -97,7 +99,6 @@ export default function CreateGameScreen({
 
     const settings: GameSettings = {
       roomCode: roomCode.toUpperCase(),
-      hostName: hostName.trim(),
       isPrivate,
       familyMode,
       roundLimit: Math.max(0, roundLimit),
@@ -105,12 +106,34 @@ export default function CreateGameScreen({
       handSize: Math.max(4, Math.min(15, handSize)),
       packs: Array.from(new Set(normalized)),
     };
-    onStart?.(settings);
+    const { data, error } = await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "create_room",
+        payload: {
+          code: settings.roomCode,
+          is_private: settings.isPrivate,
+          family_mode: settings.familyMode,
+          round_limit: settings.roundLimit,
+          score_limit: settings.scoreLimit,
+          hand_size: settings.handSize,
+          display_name: hostName.trim(),
+        },
+      },
+    });
+    setMe({
+      id: data.room.host_id,
+      name: hostName.trim(),
+    });
+
+    console.log("Create room response:", data, error);
+
+    updateSettings(settings);
     router.push("/lobby");
   }
 
   function regenerateCode() {
-    setRoomCode(makeRoomCode());
+    updateSettings({ roomCode: makeRoomCode() });
+    //setRoomCode(makeRoomCode());
   }
   const router = useRouter();
 
@@ -179,7 +202,9 @@ export default function CreateGameScreen({
               </Text>
               <TextInput
                 value={roomCode}
-                onChangeText={(t) => setRoomCode(t.toUpperCase().slice(0, 8))}
+                onChangeText={(t) =>
+                  updateSettings({ roomCode: t.toUpperCase().slice(0, 8) })
+                }
                 autoCapitalize="characters"
                 style={[
                   styles.input,
@@ -213,13 +238,13 @@ export default function CreateGameScreen({
             <Toggle
               label="Private room"
               value={isPrivate}
-              onToggle={() => setIsPrivate((v) => !v)}
+              onToggle={() => updateSettings({ isPrivate: !isPrivate })}
               isDark={isDark}
             />
             <Toggle
               label="Family mode"
               value={familyMode}
-              onToggle={() => setFamilyMode((v) => !v)}
+              onToggle={() => updateSettings({ familyMode: !familyMode })}
               isDark={isDark}
             />
           </View>
@@ -241,7 +266,9 @@ export default function CreateGameScreen({
           <Counter
             label="Round limit (0 = unlimited)"
             value={roundLimit}
-            setValue={setRoundLimit}
+            setValue={() => {
+              updateSettings({ roundLimit });
+            }}
             min={0}
             max={30}
             isDark={isDark}
@@ -249,7 +276,9 @@ export default function CreateGameScreen({
           <Counter
             label="Score limit (0 = unlimited)"
             value={scoreLimit}
-            setValue={setScoreLimit}
+            setValue={() => {
+              updateSettings({ scoreLimit });
+            }}
             min={0}
             max={30}
             isDark={isDark}
@@ -257,7 +286,7 @@ export default function CreateGameScreen({
           <Counter
             label="Hand size"
             value={handSize}
-            setValue={setHandSize}
+            setValue={() => updateSettings({ handSize })}
             min={5}
             max={15}
             isDark={isDark}

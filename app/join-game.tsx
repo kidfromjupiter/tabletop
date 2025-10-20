@@ -1,6 +1,8 @@
 import { Button, IconButton } from "@/components/ui/button"; // use latest buttons file name
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
+import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "expo-router";
 import * as React from "react";
 import {
@@ -55,6 +57,7 @@ export default function JoinGameScreen({
 }: JoinGameProps) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // zustand
   const toPhase = useGameStore((state) => state.toPhase);
@@ -88,17 +91,30 @@ export default function JoinGameScreen({
     const c = code.trim();
     setError(null);
     if (!c || c.length < 4) {
-      setError("Room code must be 4–8 characters.");
+      setError("Room code must be 4-8 characters.");
       return;
     }
     if (!trimmed) {
       setError("Please enter a display name.");
       return;
     }
-    toPhase("lobby");
-    joinRoom(c.toUpperCase(), trimmed);
-    onJoin?.({ roomCode: c.toUpperCase(), name: trimmed });
-    router.push("/lobby");
+    const { data, error } = await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "join_room",
+        payload: {
+          display_name: trimmed,
+          code: c.toUpperCase(),
+        },
+      },
+    });
+    console.log("Join response:", data, error);
+    if (!error) {
+      toPhase("lobby");
+      joinRoom(trimmed, c.toUpperCase());
+      router.push("/lobby");
+    } else {
+      console.log("Join error:", error);
+    }
   }
 
   async function handlePaste() {

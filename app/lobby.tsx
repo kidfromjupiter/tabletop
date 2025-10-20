@@ -2,9 +2,16 @@ import PlayerCard from "@/components/pages/lobby/player-card";
 import RoomCard from "@/components/pages/lobby/room-card";
 import Rules from "@/components/pages/lobby/rules";
 import { Button, IconButton } from "@/components/ui/button";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  createClient,
+  RealtimePostgresChangesPayload,
+} from "@supabase/supabase-js";
+import { useRouter } from "expo-router";
 import * as React from "react";
+import { useEffect } from "react";
 import {
   FlatList,
   Pressable,
@@ -49,8 +56,6 @@ export type LobbySettings = {
 };
 
 export default function LobbyScreen({
-  isHost,
-  meId,
   onStart,
   onToggleReady,
   onKick,
@@ -60,8 +65,6 @@ export default function LobbyScreen({
   onLeave,
   onToggleFamilyMode,
 }: {
-  isHost: boolean;
-  meId: string;
   onStart?: () => void;
   onToggleReady?: (playerId: string) => void;
   onKick?: (playerId: string) => void;
@@ -73,17 +76,26 @@ export default function LobbyScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // zustand
   const players = useGameStore((state) => state.players); // --- IGNORE ---
+  const setPlayers = useGameStore((state) => state.setPlayers); // --- IGNORE ---
+  const addPlayer = useGameStore((state) => state.addPlayer); // --- IGNORE ---
+  const updatePlayer = useGameStore((state) => state.updatePlayer); // --- IGNORE ---
+  const removePlayer = useGameStore((state) => state.removePlayer); // --- IGNORE ---
+  const meId = useGameStore((state) => state.me?.id || ""); // Ensure meId is always a string
+  const isHost = useGameStore((state) => state.isHost); // --- IGNORE ---
   const settings = useGameStore((state) => state.settings); // --- IGNORE ---
+
+  const router = useRouter();
 
   const allReady =
     players.length > 1 && players.every((p) => (p.isHost ? true : !!p.isReady));
 
   // Small pulsing animation for room code card
   const pulse = useSharedValue(1);
-  React.useEffect(() => {
+  useEffect(() => {
     let mounted = true;
     const loop = () => {
       pulse.value = withSpring(0.98, { stiffness: 120, damping: 14 }, (f) => {
@@ -98,11 +110,111 @@ export default function LobbyScreen({
       mounted = false;
     };
   }, [pulse]);
+  useEffect(() => {
+    (async () => {
+      setPlayers([]); // reset on mount
+      // Pull current state (join profiles for richer UI)
+      const { data, error } = await supabase
+        .from("room_players")
+        .select(
+          `
+    room_id, user_id, role, is_ready, score, joined_at,
+    profiles ( display_name, avatar ),
+    rooms!inner ( code )
+  `
+        )
+        .eq("rooms.code", settings?.roomCode) // filter on joined table
+        .order("joined_at", { ascending: true });
+      console.log("Lobby players fetch:", data, error);
+      if (!error && data) {
+        const mapped: Player[] = data.map((r: any) => ({
+          id: r.user_id,
+          name: r.profiles.display_name,
+          avatar: r.profiles.avatar,
+          isHost: r.role === "host",
+          isReady: r.is_ready,
+        }));
+        setPlayers(mapped);
+      }
+    })();
+  }, [settings?.roomCode]);
+
+  // subbing to supabase
+  useEffect(() => {
+    (async () => {
+      let room_id = "";
+      try {
+        const { data, error } = await supabase
+          .from("rooms")
+          .select("*")
+          .eq("code", settings?.roomCode)
+          .single();
+
+        if (!error && data) {
+          room_id = data.id;
+        }
+
+        const supabaseChannel = supabase.channel("schema-db-changes").on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "room_players",
+            filter: `room_id=eq.${room_id}`,
+          },
+          (payload: RealtimePostgresChangesPayload<any>) => {
+            (async () => {
+              const { data, error } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", payload.new.user_id)
+                .single();
+
+              if (payload.eventType === "INSERT") {
+                const newPlayer = payload.new;
+                addPlayer({
+                  id: newPlayer.user_id,
+                  name: data.display_name,
+                  isHost: newPlayer.role == "host",
+                  isReady: newPlayer.is_ready,
+                  avatar: data.avatar,
+                });
+              }
+              if (payload.eventType === "UPDATE") {
+                const updatedPlayer = payload.new;
+                updatePlayer(updatedPlayer.user_id, {
+                  name: data.display_name,
+                  isHost: updatedPlayer.role == "host",
+                  isReady: updatedPlayer.is_ready,
+                  avatar: data.avatar,
+                });
+              }
+              if (payload.eventType === "DELETE") {
+                const deletedPlayer = payload.old;
+                removePlayer(deletedPlayer.user_id);
+              }
+            })();
+          }
+        );
+        supabaseChannel.subscribe();
+
+        return () => {
+          supabaseChannel.unsubscribe();
+        };
+      } catch (err) {
+        console.error("Error in useEffect async function:", err);
+      }
+    })();
+  }, []);
+
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
   }));
 
   const headerFg = isDark ? "#fff" : "#0B0B0B";
+  if (!meId) {
+    return null;
+  }
 
   function renderPlayer({ item }: { item: Player }) {
     return (
@@ -125,7 +237,12 @@ export default function LobbyScreen({
       <ScrollView>
         {/* Header */}
         <View style={styles.header}>
-          <IconButton variant="ghost" onPress={onLeave}>
+          <IconButton
+            variant="ghost"
+            onPress={() => {
+              router.back();
+            }}
+          >
             <Ionicons
               name="arrow-back-outline"
               size={24}

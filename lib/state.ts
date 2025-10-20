@@ -90,6 +90,7 @@ export type StoreState = {
 
   // players
   addPlayer: (p: Player) => void;
+  setPlayers: (p: Player[]) => void;
   updatePlayer: (id: string, patch: Partial<Player>) => void;
   removePlayer: (id: string) => void;
   setReady: (id: string, ready: boolean) => void;
@@ -121,7 +122,6 @@ const initialSettings: GameSettings = {
   handSize: 10,
   packs: ["base"],
 };
-
 const initialState: Omit<
   StoreState,
   | "reset"
@@ -137,6 +137,7 @@ const initialState: Omit<
   | "addPlayer"
   | "updatePlayer"
   | "removePlayer"
+  | "setPlayers"
   | "setReady"
   | "promoteToHost"
   | "kick"
@@ -248,6 +249,11 @@ export const useGameStore = create<StoreState>()(
               p.id === id ? { ...p, ...patch } : p
             ),
           })),
+        setPlayers: (players) =>
+          set(() => ({
+            players: players,
+          })),
+
         removePlayer: (id) =>
           set((s) => ({ players: s.players.filter((p) => p.id !== id) })),
         setReady: (id, ready) =>
