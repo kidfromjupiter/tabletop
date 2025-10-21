@@ -218,6 +218,18 @@ export default function LobbyScreen({
       />
     );
   }
+  const toggleReady = async () => {
+    await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "toggle_ready",
+        payload: {
+          user_id: meId,
+          room_code: settings?.roomCode,
+          is_ready: !players.find((p) => p.id === meId)?.isReady,
+        },
+      },
+    });
+  };
 
   return (
     <SafeAreaView
@@ -311,7 +323,7 @@ export default function LobbyScreen({
                   ? "secondary"
                   : "primary"
               }
-              onPress={() => onToggleReady?.(meId)}
+              onPress={toggleReady}
             />
           )}
         </View>
