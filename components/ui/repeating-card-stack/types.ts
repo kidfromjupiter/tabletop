@@ -4,6 +4,7 @@ export type Item = {
   id: string;
   text: string;
   prompt?: boolean;
+  backside?: boolean;
 };
 
 export type StackCardProps = {

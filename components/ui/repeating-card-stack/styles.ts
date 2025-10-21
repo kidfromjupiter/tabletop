@@ -10,15 +10,21 @@ export const styles = StyleSheet.create({
     position: "absolute",
     width: "60%",
     borderRadius: 18,
-    padding: 16,
     shadowColor: "#000",
     shadowOpacity: 0.18,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
     color: "white",
+    overflow: "hidden",
+    borderColor: "#555555ff",
+    borderWidth: 1,
   },
-  cardInner: { flex: 1 },
+  cardInner: {
+    flex: 1,
+
+    padding: 16,
+  },
   title: { color: "white", fontSize: 22, fontWeight: "700", marginBottom: 6 },
   subtitle: { color: "rgba(255,255,255,0.9)" },
 });

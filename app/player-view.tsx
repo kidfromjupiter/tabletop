@@ -14,7 +14,10 @@ import ConfirmModal from "@/components/ui/modal";
 import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
-import { SupabaseClient } from "@supabase/supabase-js";
+import {
+  RealtimePostgresChangesPayload,
+  SupabaseClient,
+} from "@supabase/supabase-js";
 import { useNavigation } from "expo-router";
 
 const { width } = Dimensions.get("screen");
@@ -45,6 +48,7 @@ export default function PlayerView() {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const me = useGameStore((state) => state.me);
   const roomCode = useGameStore((state) => state.settings.roomCode);
+  const roundId = useGameStore((state) => state.round?.roundId);
   const pendingActionRef = useRef<any>(null);
   const blockNavRef = useRef(true); // while true, back is intercepted
 
@@ -70,6 +74,15 @@ export default function PlayerView() {
           },
         },
       });
+      const { data: submissions } = await supabase
+        .from("round_submissions")
+        .select("profiles(display_name, avatar), id")
+        .eq("round_id", roundId);
+      const submissionCards = submissions?.map((submission: any) => ({
+        id: submission.id,
+        text: submission.profiles.display_name,
+        backside: true,
+      }));
       setHand(roomState.my_hand);
       setCards([
         {
@@ -77,8 +90,50 @@ export default function PlayerView() {
           text: roomState.round.prompt.text,
           prompt: true,
         },
+        ...(submissionCards ? submissionCards : []),
       ]);
     })();
+  }, []);
+
+  useEffect(() => {
+    const sub = supabase
+      .channel("schema-db-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "round_submissions",
+          filter: `round_id=eq.${roundId}`,
+        },
+        async (payload: RealtimePostgresChangesPayload<any>) => {
+          if (payload.eventType === "INSERT") {
+            const submission_id = payload.new.id;
+            const { data } = await supabase
+              .from("profiles")
+              .select("display_name, avatar")
+              .eq("id", payload.new.user_id)
+              .single();
+            const card: Item = {
+              id: submission_id,
+              text: data?.display_name || "Anonymous",
+              backside: true,
+            };
+
+            setCards((prevCards) => [...prevCards, card]);
+          }
+          if (payload.eventType === "DELETE") {
+            const deletedSubmissionId = payload.old.id;
+            setCards((prevCards) =>
+              prevCards.filter((card) => card.id !== deletedSubmissionId)
+            );
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      sub.unsubscribe();
+    };
   }, []);
 
   const handleConfirmLeave = async () => {
@@ -122,7 +177,7 @@ export default function PlayerView() {
           style={{ flex: 1, width: "100%" }}
           source={require("../assets/images/bg.jpg")}
           imageStyle={{
-            opacity: 0.5,
+            opacity: 0.3,
             resizeMode: "cover",
           }}
         >

@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { ImageBackground, Text, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { styles } from "./styles";
@@ -33,18 +33,38 @@ export const StackCard = React.memo((props: StackCardProps) => {
         },
       ]}
     >
-      <GestureDetector gesture={pan}>
-        <View style={styles.cardInner}>
-          <Text
+      <ImageBackground
+        style={{ flex: 1, width: "100%" }}
+        source={
+          props.item.backside
+            ? require("../../../assets/images/card_bg_5.jpg")
+            : null
+        }
+        imageStyle={{
+          opacity: 0.35,
+        }}
+      >
+        <GestureDetector gesture={pan}>
+          <View
             style={[
-              styles.title,
-              { color: props.item.prompt ? "#fff" : "#000" },
+              styles.cardInner,
+              {
+                justifyContent: props.item.prompt ? "flex-start" : "center",
+                alignItems: props.item.prompt ? "flex-start" : "center",
+              },
             ]}
           >
-            {props.item.text}
-          </Text>
-        </View>
-      </GestureDetector>
+            <Text
+              style={[
+                styles.title,
+                { color: props.item.prompt ? "#fff" : "#000" },
+              ]}
+            >
+              {props.item.text}
+            </Text>
+          </View>
+        </GestureDetector>
+      </ImageBackground>
     </Animated.View>
   );
 });

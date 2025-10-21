@@ -47,14 +47,17 @@ export function useCardAnimations(props: StackCardProps) {
 
     const isIntroTop = introIndex.value === i && layer === 0;
     const pIntro = isIntroTop ? intro.value : 1;
-    const introFromTy = -Math.max(40, GAP_Y * 2);
-    const introFromScale = 0.92;
+    // More dramatic fly-in: start lower and slightly from the side with a gentle rotation
+    const introFromTy = Math.max(200, GAP_Y * 8);
+    const introFromScale = 0.9;
     const introFromOpacity = 0.0;
-    const introFromRot = -6;
+    const introFromRot = 8; // slight tilt
+    const introFromX = 48; // slide in from the side
     const introTy = introFromTy + (0 - introFromTy) * pIntro;
     const introScale = introFromScale + (1 - introFromScale) * pIntro;
     const introOpacity = introFromOpacity + (1 - introFromOpacity) * pIntro;
     const introRot = introFromRot + (0 - introFromRot) * pIntro;
+    const introX = introFromX + (0 - introFromX) * pIntro;
 
     const promoShiftY = layer > 0 ? -reorder.value * GAP_Y : 0;
     const promoScale = layer > 0 ? reorder.value * SCALE_STEP : 0;
@@ -63,7 +66,7 @@ export function useCardAnimations(props: StackCardProps) {
       zIndex: VISIBLE - layer,
       opacity: isIntroTop ? introOpacity : isReentering ? entryOpacity : 1,
       transform: [
-        { translateX: isTop ? tx.value : 0 },
+        { translateX: isTop ? (isIntroTop ? introX : 0) + tx.value : 0 },
         {
           translateY:
             (isTop ? ty.value : 0) +
