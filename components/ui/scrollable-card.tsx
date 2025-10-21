@@ -111,7 +111,7 @@ export function ScrollableCard({
       left: 0,
       right: 0,
       opacity: opacity.value,
-      elevation: gestureActive.value ? 4 : 0,
+      elevation: gestureActive.value ? 0 : 10,
       transform: [
         {
           translateY: initialY.value + ty.value,
@@ -124,14 +124,9 @@ export function ScrollableCard({
   return (
     <GestureDetector gesture={flingGesture}>
       <Animated.View
-        style={[
-          styles.card,
-          style,
-          animatedStyles,
-          { borderColor: data.color, borderWidth: 2 },
-        ]}
+        style={[styles.card, style, animatedStyles, { borderWidth: 2 }]}
       >
-        <Text>{data.title}</Text>
+        <Text style={styles.title}>{data.text}</Text>
       </Animated.View>
     </GestureDetector>
   );
@@ -147,7 +142,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    borderColor: "#dbdbdbff",
+    borderColor: "#a3a3a3ff",
     borderWidth: 1,
+    padding: 10,
   },
+
+  title: { color: "black", fontSize: 19, fontWeight: "700", marginBottom: 6 },
 });

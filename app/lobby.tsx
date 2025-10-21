@@ -87,6 +87,7 @@ export default function LobbyScreen({
   const meId = useGameStore((state) => state.me?.id || ""); // Ensure meId is always a string
   const isHost = useGameStore((state) => state.isHost); // --- IGNORE ---
   const settings = useGameStore((state) => state.settings); // --- IGNORE ---
+  const setRound = useGameStore((state) => state.startRound); // --- IGNORE ---
 
   const router = useRouter();
 
@@ -143,48 +144,73 @@ export default function LobbyScreen({
   useEffect(() => {
     (async () => {
       try {
-        const supabaseChannel = supabase.channel("schema-db-changes").on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "room_players",
-            filter: `room_code=eq.${settings?.roomCode}`,
-          },
-          (payload: RealtimePostgresChangesPayload<any>) => {
-            (async () => {
-              const { data, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", payload.new.user_id)
-                .single();
-
+        const supabaseChannel = supabase
+          .channel("schema-db-changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "rounds",
+              filter: `room_code=eq.${settings?.roomCode}`,
+            },
+            (payload: RealtimePostgresChangesPayload<any>) => {
               if (payload.eventType === "INSERT") {
-                const newPlayer = payload.new;
-                addPlayer({
-                  id: newPlayer.user_id,
-                  name: data.display_name,
-                  isHost: newPlayer.role == "host",
-                  isReady: newPlayer.is_ready,
-                  avatar: data.avatar,
-                });
+                // created a new round, navigate to game view
+                const roundData = payload.new;
+
+                setRound(
+                  roundData.id,
+                  roundData.prompt,
+                  roundData.pick_count,
+                  roundData.judge_user_id
+                );
+                router.push("/game-view");
               }
-              if (payload.eventType === "UPDATE") {
-                const updatedPlayer = payload.new;
-                updatePlayer(updatedPlayer.user_id, {
-                  name: data.display_name,
-                  isHost: updatedPlayer.role == "host",
-                  isReady: updatedPlayer.is_ready,
-                  avatar: data.avatar,
-                });
-              }
-              if (payload.eventType === "DELETE") {
-                const deletedPlayer = payload.old;
-                removePlayer(deletedPlayer.user_id);
-              }
-            })();
-          }
-        );
+            }
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "room_players",
+              filter: `room_code=eq.${settings?.roomCode}`,
+            },
+            (payload: RealtimePostgresChangesPayload<any>) => {
+              (async () => {
+                const { data, error } = await supabase
+                  .from("profiles")
+                  .select("*")
+                  .eq("id", payload.new.user_id)
+                  .single();
+
+                if (payload.eventType === "INSERT") {
+                  const newPlayer = payload.new;
+                  addPlayer({
+                    id: newPlayer.user_id,
+                    name: data.display_name,
+                    isHost: newPlayer.role == "host",
+                    isReady: newPlayer.is_ready,
+                    avatar: data.avatar,
+                  });
+                }
+                if (payload.eventType === "UPDATE") {
+                  const updatedPlayer = payload.new;
+                  updatePlayer(updatedPlayer.user_id, {
+                    name: data.display_name,
+                    isHost: updatedPlayer.role == "host",
+                    isReady: updatedPlayer.is_ready,
+                    avatar: data.avatar,
+                  });
+                }
+                if (payload.eventType === "DELETE") {
+                  const deletedPlayer = payload.old;
+                  removePlayer(deletedPlayer.user_id);
+                }
+              })();
+            }
+          );
         supabaseChannel.subscribe();
 
         return () => {
@@ -226,6 +252,18 @@ export default function LobbyScreen({
           user_id: meId,
           room_code: settings?.roomCode,
           is_ready: !players.find((p) => p.id === meId)?.isReady,
+        },
+      },
+    });
+  };
+
+  const startRound = async () => {
+    await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "start_round",
+        payload: {
+          room_code: settings?.roomCode,
+          user_id: meId,
         },
       },
     });
@@ -310,7 +348,11 @@ export default function LobbyScreen({
         <View style={{ height: 12 }} />
         <View style={styles.footerBar}>
           {isHost ? (
-            <Button title="Start Game" onPress={onStart} disabled={!allReady} />
+            <Button
+              title="Start Game"
+              onPress={startRound}
+              disabled={!allReady}
+            />
           ) : (
             <Button
               title={

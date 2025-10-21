@@ -51,7 +51,7 @@ export function DraggableCard({
       <Animated.View
         style={[styles.card, style, { backgroundColor: item.color || "#fff" }]}
       >
-        <Text style={{ color: "#111", fontWeight: "700" }}>{item.title}</Text>
+        <Text style={styles.title}>{item.title}</Text>
       </Animated.View>
     </GestureDetector>
   );
@@ -72,4 +72,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
+  title: { color: "white", fontSize: 22, fontWeight: "700", marginBottom: 6 },
 });

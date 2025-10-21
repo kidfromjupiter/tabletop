@@ -16,8 +16,9 @@ export const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
+    color: "white",
   },
-  cardInner: { flex: 1, justifyContent: "center" },
+  cardInner: { flex: 1 },
   title: { color: "white", fontSize: 22, fontWeight: "700", marginBottom: 6 },
   subtitle: { color: "rgba(255,255,255,0.9)" },
 });

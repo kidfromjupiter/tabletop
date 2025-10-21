@@ -1,15 +1,21 @@
-//import RepeatingCardStack, { Item } from "@/components/ui/repeating-card-stack";
-//import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { Item } from "@/components/ui/repeating-card-stack/types";
-import Constants from "expo-constants";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { Dimensions, StyleSheet, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Dimensions, ImageBackground, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   useAnimatedScrollHandler,
   useSharedValue,
 } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import SelfHand from "@/components/ui/hand-flatlist";
+import ConfirmModal from "@/components/ui/modal";
+import RepeatingCardStack from "@/components/ui/repeating-card-stack";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
+import { useGameStore } from "@/lib/state";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { useNavigation } from "expo-router";
 
 const { width } = Dimensions.get("screen");
 const CARD_WIDTH = width * 0.45;
@@ -17,52 +23,114 @@ const OPP_CARD_WIDTH = width * 0.25;
 const OPP_GAP = 3;
 const CARD_GAP = 5;
 
-const data: Item[] = [
-  { id: "1", title: "Card 1", color: "#ffadad" },
-  // { id: "2", title: "Card 2", color: "#ffd6a5" },
-  // { id: "3", title: "Card 3", color: "#fdffb6" },
-];
+const data: Item[] = [{ id: "1", text: "Card 1" }];
 
 const handData: Item[] = [
-  { id: "6", title: "Card 6", color: "#8b2525ff" },
-  { id: "7", title: "Card 7", color: "#e7942eff" },
-  { id: "8", title: "Card 8", color: "#0ec98aff" },
-  { id: "9", title: "Card 6", color: "#8b2525ff" },
-  { id: "10", title: "Card 7", color: "#e7942eff" },
-  { id: "11", title: "Card 8", color: "#0ec98aff" },
+  { id: "6", text: "Card 6" },
+  { id: "7", text: "Card 7" },
+  { id: "8", text: "Card 8" },
+  { id: "9", text: "Card 6" },
+  { id: "10", text: "Card 7" },
+  { id: "11", text: "Card 8" },
 ];
 
-import SelfHand from "@/components/ui/hand-flatlist";
-import RepeatingCardStack from "@/components/ui/repeating-card-stack";
-import { SafeAreaView } from "react-native-safe-area-context";
-
 export default function PlayerView() {
-  console.log(Constants.systemFonts);
-
+  const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const navigation = useNavigation();
   const [cards, setCards] = useState(data);
   const [hand, setHand] = useState(handData);
+  // const hand = useGameStore((state) => state.hand);
+
+  // nav guard + modal state
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const me = useGameStore((state) => state.me);
+  const roomCode = useGameStore((state) => state.settings.roomCode);
+  const pendingActionRef = useRef<any>(null);
+  const blockNavRef = useRef(true); // while true, back is intercepted
+
+  useEffect(() => {
+    // Intercept any attempt to leave this screen
+    const unsub = navigation.addListener("beforeRemove", (e: any) => {
+      if (!blockNavRef.current) return; // already allowed
+      e.preventDefault(); // stop the default behavior
+      pendingActionRef.current = e.data.action; // remember what they tried to do
+      setConfirmVisible(true);
+    });
+    return unsub;
+  }, []);
+  useEffect(() => {
+    if (!me) return;
+    (async () => {
+      const { data: roomState } = await supabase.functions.invoke("endpoints", {
+        body: {
+          action: "room_state",
+          payload: {
+            room_code: roomCode,
+            user_id: me?.id,
+          },
+        },
+      });
+      setHand(roomState.my_hand);
+      setCards([
+        {
+          id: roomState.round.prompt.id,
+          text: roomState.round.prompt.text,
+          prompt: true,
+        },
+      ]);
+    })();
+  }, []);
+
+  const handleConfirmLeave = async () => {
+    try {
+      // TODO: your cleanup here (leave room / update presence / etc.)
+      // await supabase.rpc('leave_room', { room_id: currentRoomId, user_id: uid });
+    } finally {
+      // allow the original navigation to proceed
+      blockNavRef.current = false;
+      if (pendingActionRef.current) {
+        navigation.dispatch(pendingActionRef.current);
+      } else {
+        // fallback
+        // @ts-ignore
+        navigation.goBack?.();
+      }
+    }
+  };
+
+  const handleCancelLeave = () => {
+    setConfirmVisible(false);
+    pendingActionRef.current = null;
+  };
 
   const oppScrollX = useSharedValue<number>(0);
-
   const oppOnScroll = useAnimatedScrollHandler((e) => {
     oppScrollX.value = e.contentOffset.x / (OPP_CARD_WIDTH + OPP_GAP);
   });
 
   const removeById = (id: string) => {
     const item = hand.find((item) => item.id === id);
-    addToStack(item!);
+    if (item) addToStack(item);
     setHand((prev) => prev.filter((item) => item.id !== id));
   };
-  const addToStack = (item: Item) => {
-    setCards((prev) => [...prev, item]);
-  };
+  const addToStack = (item: Item) => setCards((prev) => [...prev, item]);
 
   return (
     <GestureHandlerRootView>
-      <SafeAreaView style={styles.container}>
-        <StatusBar style="light" />
-        <View style={{ flex: 1, width: "100%" }}>
-          {/* <OpponentHand
+      <SafeAreaView style={[styles.container]}>
+        <ImageBackground
+          style={{ flex: 1, width: "100%" }}
+          source={require("../assets/images/bg.jpg")}
+          imageStyle={{
+            opacity: 0.5,
+            resizeMode: "cover",
+          }}
+        >
+          <StatusBar style="light" />
+
+          <View style={{ flex: 1, width: "100%" }}>
+            {/* Opponent hand (optional) */}
+            {/* <OpponentHand
             hand={hand}
             removeById={removeById}
             scrollX={oppScrollX}
@@ -70,28 +138,35 @@ export default function PlayerView() {
             card_width={OPP_CARD_WIDTH}
             gap={OPP_GAP}
           /> */}
-        </View>
+          </View>
 
-        <View style={{ flex: 2, width: "100%", justifyContent: "center" }}>
-          <RepeatingCardStack data={cards} cardHeight={250} />
-        </View>
+          <View style={{ flex: 2, width: "100%", justifyContent: "center" }}>
+            <RepeatingCardStack data={cards} cardHeight={300} />
+          </View>
 
-        <View
-          style={{
-            flex: 2,
-            width: "100%",
-            overflow: "visible",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <SelfHand
-            gap={CARD_GAP}
-            hand={hand}
-            removeById={removeById}
-            card_width={CARD_WIDTH}
+          <View
+            style={{
+              flex: 2,
+              width: "100%",
+              overflow: "visible",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <SelfHand
+              gap={CARD_GAP}
+              hand={hand}
+              removeById={removeById}
+              card_width={CARD_WIDTH}
+            />
+          </View>
+
+          <ConfirmModal
+            visible={confirmVisible}
+            onCancel={handleCancelLeave}
+            onConfirm={handleConfirmLeave}
           />
-        </View>
+        </ImageBackground>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -100,7 +175,7 @@ export default function PlayerView() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#c4c4c4ff",
+    backgroundColor: "#0E0E0E",
     alignItems: "center",
     justifyContent: "center",
   },

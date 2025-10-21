@@ -29,16 +29,20 @@ export const StackCard = React.memo((props: StackCardProps) => {
         style,
         {
           height: props.cardHeight,
-          backgroundColor: props.item.color || "#222",
+          backgroundColor: props.item.prompt ? "#222" : "#ffffffff",
         },
       ]}
     >
       <GestureDetector gesture={pan}>
         <View style={styles.cardInner}>
-          <Text style={styles.title}>{props.item.title}</Text>
-          {props.item.subtitle ? (
-            <Text style={styles.subtitle}>{props.item.subtitle}</Text>
-          ) : null}
+          <Text
+            style={[
+              styles.title,
+              { color: props.item.prompt ? "#fff" : "#000" },
+            ]}
+          >
+            {props.item.text}
+          </Text>
         </View>
       </GestureDetector>
     </Animated.View>

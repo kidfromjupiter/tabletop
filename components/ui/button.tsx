@@ -25,7 +25,7 @@ import Animated, {
  * - Animated press-in/out scale spring
  */
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export type ButtonProps = {
@@ -78,14 +78,7 @@ export function Button({
   const isLoading = loading ?? internalLoading;
   const isDisabled = disabled || isLoading;
 
-  const spinnerColor =
-    variant === "ghost"
-      ? isDark
-        ? "#EAEAEA"
-        : "#222"
-      : isDark
-        ? "#0B0B0B"
-        : "#FFF";
+  const spinnerColor = fg;
 
   const handlePress = React.useCallback(async () => {
     if (!onPress) return;
@@ -269,6 +262,7 @@ export function StepButton({
 }
 
 // ---------------- Theme helpers ----------------
+// 3) Update themedColors to include a "danger" branch
 function themedColors(
   isDark: boolean,
   variant: ButtonVariant,
@@ -276,6 +270,13 @@ function themedColors(
 ) {
   const accent600 = "#6A5AE0";
   const accent500 = "#8B7BFF";
+
+  // Reds for danger
+  const red600 = "#E5484D"; // prominent destructive
+  const red700 = "#CD2B31"; // pressed/dark fallback
+  const red300 = "#FFB1B6"; // disabled tint (light)
+  const red400 = "#FF6B72"; // disabled tint (dark)
+
   if (variant === "primary") {
     return {
       bg: disabled
@@ -289,6 +290,7 @@ function themedColors(
       border: "transparent",
     };
   }
+
   if (variant === "secondary") {
     return {
       bg: isDark ? "#3A3A3A" : "#EFEFEF",
@@ -296,7 +298,16 @@ function themedColors(
       border: "transparent",
     };
   }
-  // ghost
+
+  if (variant === "danger") {
+    return {
+      bg: disabled ? (isDark ? red400 : red300) : isDark ? red400 : red600,
+      fg: "#FFFFFF", // white text/spinner for strong contrast
+      border: "transparent",
+    };
+  }
+
+  // ghost (neutral outline)
   return {
     bg: "transparent",
     fg: isDark ? "#EAEAEA" : "#222",

@@ -2,9 +2,8 @@ import { SharedValue } from "react-native-reanimated";
 
 export type Item = {
   id: string;
-  title: string;
-  subtitle?: string;
-  color?: string;
+  text: string;
+  prompt?: boolean;
 };
 
 export type StackCardProps = {

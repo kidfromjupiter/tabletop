@@ -39,6 +39,7 @@ export type Phase =
   | "round";
 
 export type RoundData = {
+  roundId: string;
   prompt: string;
   pickCount: number; // 1 or 2
   submissions: Submission[];
@@ -46,11 +47,7 @@ export type RoundData = {
   timeTotalSec?: number;
   winnerId?: string; // player id
   winningSubmissionId?: string; // submission id
-};
-
-export type LobbyMeta = {
-  judgeOrder: string[]; // array of player ids in judge order
-  judgeIndex: number; // current judge pointer
+  judgeId?: string; // player id
 };
 
 export type StoreState = {
@@ -60,7 +57,6 @@ export type StoreState = {
   phase: Phase;
   settings: GameSettings;
   players: Player[];
-  lobby: LobbyMeta;
   round: RoundData | null;
 
   // ui
@@ -96,18 +92,21 @@ export type StoreState = {
   setReady: (id: string, ready: boolean) => void;
   promoteToHost: (id: string) => void;
   kick: (id: string) => void;
-  shuffleJudges: () => void;
 
   // phase flow
   toPhase: (p: Phase) => void;
   toLobby: () => void;
-  startRound: (prompt: string, pickCount: number) => void;
+  startRound: (
+    roundId: string,
+    prompt: string,
+    pickCount: number,
+    judgeId: string
+  ) => void;
   submitForPlayer: (submission: Submission) => void;
   revealSubmission: (submissionId: string) => void;
   revealAll: () => void;
   pickWinner: (submissionId: string) => void;
   confirmWinner: () => void;
-  nextRound: () => void;
 
   // timer
   setTimer: (left: number, total: number) => void;
@@ -161,21 +160,10 @@ const initialState: Omit<
     { id: "1", name: "Kavi", isHost: true, isReady: true },
     { id: "2", name: "Alex", isReady: false },
   ],
-  lobby: { judgeOrder: [], judgeIndex: 0 },
   round: null,
   busy: false,
   error: null,
 };
-
-// Helper: shuffle array
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 export const useGameStore = create<StoreState>()(
   devtools(
@@ -198,7 +186,6 @@ export const useGameStore = create<StoreState>()(
             isHost: true,
             settings,
             players: [{ id, name: hostName, isHost: true, isReady: true }],
-            lobby: { judgeOrder: [id], judgeIndex: 0 },
             phase: "lobby",
           });
         },
@@ -276,26 +263,21 @@ export const useGameStore = create<StoreState>()(
           })),
         kick: (id) =>
           set((s) => ({ players: s.players.filter((p) => p.id !== id) })),
-        shuffleJudges: () =>
-          set((s) => ({
-            lobby: {
-              judgeOrder: shuffle(s.players.map((p) => p.id)),
-              judgeIndex: 0,
-            },
-          })),
 
         toPhase: (p) => set({ phase: p }),
         toLobby: () => set({ phase: "lobby" }),
 
-        startRound: (prompt, pickCount) =>
+        startRound: (roundId, prompt, pickCount, judgeId) =>
           set((s) => ({
             phase: "judge",
             round: {
+              roundId,
               prompt,
               pickCount,
               submissions: [],
               timeLeftSec: undefined,
               timeTotalSec: undefined,
+              judgeId,
             },
           })),
 
@@ -370,17 +352,6 @@ export const useGameStore = create<StoreState>()(
                   revealed: true,
                 })),
               },
-            } as any;
-          }),
-
-        nextRound: () =>
-          set((s) => {
-            const nextJudgeIndex =
-              (s.lobby.judgeIndex + 1) %
-              Math.max(1, s.lobby.judgeOrder.length || s.players.length || 1);
-            return {
-              phase: "results",
-              lobby: { ...s.lobby, judgeIndex: nextJudgeIndex },
             } as any;
           }),
 
