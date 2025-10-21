@@ -242,16 +242,19 @@ export const useGameStore = create<StoreState>()(
             players: s.players.some((x) => x.id === p.id)
               ? s.players
               : [...s.players, p],
+            isHost: p.isHost || s.isHost, // Set isHost if the player is a host
           })),
         updatePlayer: (id, patch) =>
           set((s) => ({
             players: s.players.map((p) =>
               p.id === id ? { ...p, ...patch } : p
             ),
+            isHost: patch.isHost ? true : s.isHost, // Update isHost if patch includes isHost
           })),
         setPlayers: (players) =>
           set(() => ({
             players: players,
+            isHost: players.some((p) => p.isHost), // Set isHost if any player is a host
           })),
 
         removePlayer: (id) =>
