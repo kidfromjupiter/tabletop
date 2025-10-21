@@ -80,7 +80,7 @@ export type StoreState = {
     hostName: string,
     settings: Omit<GameSettings, "roomCode"> & { roomCode: string }
   ) => void;
-  joinRoom: (name: string, roomCode: string) => void;
+  joinRoom: (roomCode: string) => void;
   leaveRoom: () => void;
 
   // settings
@@ -203,15 +203,12 @@ export const useGameStore = create<StoreState>()(
           });
         },
 
-        joinRoom: (name, roomCode) => {
-          const id = `p_${Math.random().toString(36).slice(2, 8)}`;
-          const me = { id, name };
+        joinRoom: (roomCode) => {
           const settings = get().settings ?? { ...initialSettings, roomCode };
           set((s) => ({
-            me,
             isHost: false,
             settings: { ...settings, roomCode },
-            players: [...s.players, { id, name, isReady: false }],
+            players: [...s.players],
             phase: "lobby",
           }));
         },
@@ -238,25 +235,32 @@ export const useGameStore = create<StoreState>()(
           })),
 
         addPlayer: (p) =>
-          set((s) => ({
-            players: s.players.some((x) => x.id === p.id)
+          set((s) => {
+            const players = s.players.some((x) => x.id === p.id)
               ? s.players
-              : [...s.players, p],
-            isHost: p.isHost || s.isHost, // Set isHost if the player is a host
-          })),
+              : [...s.players, p];
+            const myId = s.me?.id;
+            const iAmHost = players.some((pl) => pl.isHost && pl.id === myId);
+            return { players, isHost: iAmHost };
+          }),
         updatePlayer: (id, patch) =>
-          set((s) => ({
-            players: s.players.map((p) =>
+          set((s) => {
+            const players = s.players.map((p) =>
               p.id === id ? { ...p, ...patch } : p
-            ),
-            isHost: patch.isHost ? true : s.isHost, // Update isHost if patch includes isHost
-          })),
+            );
+            const myId = s.me?.id;
+            const iAmHost = players.some((pl) => pl.isHost && pl.id === myId);
+            return { players, isHost: iAmHost };
+          }),
         setPlayers: (players) =>
-          set(() => ({
-            players: players,
-            isHost: players.some((p) => p.isHost), // Set isHost if any player is a host
-          })),
+          set((s) => {
+            const myId = s.me?.id;
+            console.log(myId);
+            const iAmHost = players.some((pl) => pl.isHost && pl.id === myId);
 
+            console.log(iAmHost);
+            return { players, isHost: iAmHost };
+          }),
         removePlayer: (id) =>
           set((s) => ({ players: s.players.filter((p) => p.id !== id) })),
         setReady: (id, ready) =>

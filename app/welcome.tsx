@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/lib/state";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import * as React from "react";
 import {
   Image,
@@ -18,7 +18,6 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { runOnJS } from "react-native-worklets";
 
 /**
  * WelcomeScreen.tsx (no reusables)
@@ -46,27 +45,17 @@ export default function WelcomeScreen({
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
   const router = useRouter();
+  const [mounted, setMounted] = React.useState(true);
   const toPhase = useGameStore((state) => state.toPhase);
 
   // tiny bob animation for logo
   const bob = useSharedValue(0);
-  React.useEffect(() => {
-    let mounted = true;
-    const loop = () => {
-      bob.value = withSpring(1, { stiffness: 60, damping: 8 }, (finished) => {
-        if (finished && mounted) {
-          bob.value = withSpring(0, { stiffness: 60, damping: 8 }, () => {
-            console.log("Calling loop");
-            runOnJS(loop)();
-          });
-        }
-      });
-    };
-    loop();
-    return () => {
-      mounted = false;
-    };
-  }, [bob]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      bob.value = withSpring(1, { stiffness: 60, damping: 8 });
+    }, [bob])
+  );
 
   const bobStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: bob.value * -4 }],
@@ -171,7 +160,10 @@ export default function WelcomeScreen({
             gap: 16,
           }}
         >
-          <Pressable accessibilityRole="button" onPress={onHowToPlay}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push("/player-view")}
+          >
             <Text style={styles.link}>How it works</Text>
           </Pressable>
           <Text style={{ opacity: 0.5 }}>|</Text>
@@ -181,7 +173,7 @@ export default function WelcomeScreen({
         </View>
 
         <View style={{ flex: 1 }} />
-        <Text style={styles.footer}>Built with ❤️ • Reanimated ready</Text>
+        <Text style={styles.footer}>Built with ❤️ by kidfromjupiter</Text>
       </View>
     </SafeAreaView>
   );
@@ -239,7 +231,13 @@ const styles = StyleSheet.create({
   },
   buttonText: { fontSize: 16, fontWeight: "700", letterSpacing: 0.2 },
   link: { fontSize: 14, textDecorationLine: "underline", opacity: 0.9 },
-  footer: { textAlign: "center", fontSize: 12, opacity: 0.6, marginBottom: 10 },
+  footer: {
+    textAlign: "center",
+    fontSize: 12,
+    opacity: 0.6,
+    marginBottom: 10,
+    color: "#888",
+  },
 });
 
 /**

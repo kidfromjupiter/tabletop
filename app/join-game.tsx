@@ -64,6 +64,7 @@ export default function JoinGameScreen({
   const joinRoom = useGameStore((state) => state.joinRoom);
   const roomName = useGameStore((state) => state.settings?.roomCode);
   const displayName = useGameStore((state) => state.me?.name);
+  const setMe = useGameStore((state) => state.setMe);
 
   const [name, setName] = React.useState(displayName || defaultName);
   const [code, setCode] = React.useState(
@@ -108,9 +109,10 @@ export default function JoinGameScreen({
       },
     });
     console.log("Join response:", data, error);
+    setMe({ id: data?.user_id || "", name: trimmed });
     if (!error) {
       toPhase("lobby");
-      joinRoom(trimmed, c.toUpperCase());
+      joinRoom(c.toUpperCase());
       router.push("/lobby");
     } else {
       console.log("Join error:", error);

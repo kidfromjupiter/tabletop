@@ -5,8 +5,8 @@ import {
   GestureDetector,
 } from "react-native-gesture-handler";
 import Animated, {
+  Extrapolation,
   interpolate,
-  LinearTransition,
   runOnJS,
   SharedValue,
   useAnimatedStyle,
@@ -28,7 +28,9 @@ export function ScrollableCard({
   inverted = false,
   displayedRangeFromCenter = 1,
   yRange = 20,
+  totalWidth,
 }: {
+  totalWidth: number;
   inverted?: boolean;
   data: Item;
   displayedRangeFromCenter?: number;
@@ -40,7 +42,6 @@ export function ScrollableCard({
   rotation?: number;
   yRange?: number;
 }) {
-  const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const initialY = useSharedValue(0);
   const opacity = useSharedValue(1);
@@ -60,20 +61,22 @@ export function ScrollableCard({
       console.log("END FLING");
       runOnJS(callback)(id);
     });
+
   const animatedStyles = useAnimatedStyle(() => {
     let rot;
     if (!inverted) {
       initialY.value = interpolate(
-        scrollX.value,
+        scrollX.value / totalWidth,
         [
           index - displayedRangeFromCenter,
           index,
           index + displayedRangeFromCenter,
         ],
-        [yRange, 0, yRange]
+        [yRange, 0, yRange],
+        Extrapolation.CLAMP
       );
       rot = interpolate(
-        scrollX.value,
+        scrollX.value / totalWidth,
         [
           index - displayedRangeFromCenter,
           index,
@@ -83,16 +86,17 @@ export function ScrollableCard({
       );
     } else {
       initialY.value = interpolate(
-        scrollX.value,
+        scrollX.value / totalWidth,
         [
           index - displayedRangeFromCenter,
           index,
           index + displayedRangeFromCenter,
         ],
-        [-yRange, 0, -yRange]
+        [-yRange, 0, -yRange],
+        Extrapolation.CLAMP
       );
       rot = interpolate(
-        scrollX.value,
+        scrollX.value / totalWidth,
         [
           index - displayedRangeFromCenter,
           index,
@@ -102,24 +106,17 @@ export function ScrollableCard({
       );
     }
     return {
-      transform: [
-        {
-          translateY: initialY.value,
-        },
-        { rotate: `${rot}deg` },
-      ],
-    };
-  });
-  const gestureStyle = useAnimatedStyle(() => {
-    return {
       zIndex: gestureActive.value ? 100 : 0,
       position: gestureActive.value ? "absolute" : "relative",
       left: 0,
       right: 0,
       opacity: opacity.value,
+      elevation: gestureActive.value ? 4 : 0,
       transform: [
-        { translateX: tx.value },
-        { translateY: initialY.value + ty.value },
+        {
+          translateY: initialY.value + ty.value,
+        },
+        { rotate: `${rot}deg` },
         { scale: scale.value },
       ],
     };
@@ -130,11 +127,9 @@ export function ScrollableCard({
         style={[
           styles.card,
           style,
-          gestureStyle,
           animatedStyles,
           { borderColor: data.color, borderWidth: 2 },
         ]}
-        layout={LinearTransition}
       >
         <Text>{data.title}</Text>
       </Animated.View>

@@ -10,7 +10,6 @@ import {
   useAnimatedScrollHandler,
   useSharedValue,
 } from "react-native-reanimated";
-import RepeatingCardStack from "../components/ui/repeating-card-stack";
 
 const { width } = Dimensions.get("screen");
 const CARD_WIDTH = width * 0.45;
@@ -33,9 +32,8 @@ const handData: Item[] = [
   { id: "11", title: "Card 8", color: "#0ec98aff" },
 ];
 
-import { Button } from "@/components/ui/button";
 import SelfHand from "@/components/ui/hand-flatlist";
-import OpponentHand from "@/components/ui/opponent-hand";
+import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PlayerView() {
@@ -44,12 +42,8 @@ export default function PlayerView() {
   const [cards, setCards] = useState(data);
   const [hand, setHand] = useState(handData);
 
-  const scrollX = useSharedValue<number>(0);
   const oppScrollX = useSharedValue<number>(0);
 
-  const onScroll = useAnimatedScrollHandler((e) => {
-    scrollX.value = e.contentOffset.x / (CARD_WIDTH + CARD_GAP);
-  });
   const oppOnScroll = useAnimatedScrollHandler((e) => {
     oppScrollX.value = e.contentOffset.x / (OPP_CARD_WIDTH + OPP_GAP);
   });
@@ -68,19 +62,18 @@ export default function PlayerView() {
       <SafeAreaView style={styles.container}>
         <StatusBar style="light" />
         <View style={{ flex: 1, width: "100%" }}>
-          <OpponentHand
+          {/* <OpponentHand
             hand={hand}
             removeById={removeById}
             scrollX={oppScrollX}
             onScroll={oppOnScroll}
             card_width={OPP_CARD_WIDTH}
             gap={OPP_GAP}
-          />
+          /> */}
         </View>
-        <Button title="test" variant={"secondary"} />
 
         <View style={{ flex: 2, width: "100%", justifyContent: "center" }}>
-          <RepeatingCardStack data={cards} cardHeight={300} />
+          <RepeatingCardStack data={cards} cardHeight={250} />
         </View>
 
         <View
@@ -96,8 +89,6 @@ export default function PlayerView() {
             gap={CARD_GAP}
             hand={hand}
             removeById={removeById}
-            scrollX={scrollX}
-            onScroll={onScroll}
             card_width={CARD_WIDTH}
           />
         </View>

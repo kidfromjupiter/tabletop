@@ -37,6 +37,14 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="player-view"
+          options={{ title: "Game" }}
+          initialParams={{
+            roomCode: "ABCD5",
+            playerId: "p1",
+          }}
+        />
+        <Stack.Screen
           name="round-results"
           options={{ title: "Round Results" }}
           initialParams={{

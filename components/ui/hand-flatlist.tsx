@@ -3,7 +3,8 @@ import Animated, {
   FadeIn,
   FadeOut,
   LinearTransition,
-  SharedValue,
+  useAnimatedRef,
+  useScrollOffset,
 } from "react-native-reanimated";
 import { Item } from "./repeating-card-stack/types";
 import { ScrollableCard } from "./scrollable-card";
@@ -13,18 +14,18 @@ const { width } = Dimensions.get("screen");
 export default function SelfHand({
   hand,
   removeById,
-  scrollX,
-  onScroll,
   card_width,
   gap = 5,
 }: {
   hand: Item[];
   removeById: (id: string) => void;
-  scrollX: SharedValue<number>;
-  onScroll: (e: any) => void;
   card_width: number;
   gap?: number;
 }) {
+  const totalWidth = card_width + gap;
+  const animatedRef = useAnimatedRef<Animated.FlatList>();
+  const scrollOffset = useScrollOffset(animatedRef);
+
   return (
     <Animated.FlatList
       data={hand}
@@ -34,6 +35,7 @@ export default function SelfHand({
         alignItems: "center",
         paddingTop: 25,
       }}
+      ref={animatedRef}
       snapToInterval={card_width + gap}
       horizontal
       decelerationRate={"fast"}
@@ -60,16 +62,16 @@ export default function SelfHand({
               width: "100%",
               overflow: "visible",
             }}
-            scrollX={scrollX}
+            scrollX={scrollOffset}
             index={index}
             id={item.id}
+            totalWidth={totalWidth}
             callback={removeById}
           />
         </Animated.View>
       )}
       showsHorizontalScrollIndicator={false}
-      onScroll={onScroll}
-      removeClippedSubviews={false}
+      removeClippedSubviews={true}
       scrollEventThrottle={16}
     />
   );
