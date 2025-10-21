@@ -30,16 +30,19 @@ export type ButtonSize = "sm" | "md" | "lg";
 
 export type ButtonProps = {
   title: string;
-  onPress?: () => void;
+  onPress?: () => void | Promise<void>;
   onLongPress?: () => void;
   disabled?: boolean;
-  loading?: boolean;
+  loading?: boolean; // manual override (still supported)
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
   testID?: string;
   left?: React.ReactNode;
   right?: React.ReactNode;
+  autoLoading?: boolean; // NEW: auto spinner/disable while async onPress runs
+  loadingText?: string; // optional text shown instead of spinner (if you prefer)
+  indicatorSize?: "small" | "large";
 };
 
 export function Button({
@@ -47,13 +50,16 @@ export function Button({
   onPress,
   onLongPress,
   disabled,
-  loading,
+  loading, // manual loading still works
   variant = "primary",
   size = "md",
   fullWidth = true,
   testID,
   left,
   right,
+  autoLoading = true,
+  loadingText,
+  indicatorSize = "small",
 }: ButtonProps) {
   const scale = useSharedValue(1);
   const animated = useAnimatedStyle(() => ({
@@ -62,59 +68,92 @@ export function Button({
 
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
-
   const { bg, fg, border } = themedColors(isDark, variant, disabled);
+
   const padd = size === "lg" ? 16 : size === "md" ? 14 : 10;
   const fsize = size === "lg" ? 17 : size === "md" ? 16 : 14;
+
+  // Internal loading state for autoLoading mode
+  const [internalLoading, setInternalLoading] = React.useState(false);
+  const isLoading = loading ?? internalLoading;
+  const isDisabled = disabled || isLoading;
+
+  const spinnerColor =
+    variant === "ghost"
+      ? isDark
+        ? "#EAEAEA"
+        : "#222"
+      : isDark
+        ? "#0B0B0B"
+        : "#FFF";
+
+  const handlePress = React.useCallback(async () => {
+    if (!onPress) return;
+    try {
+      const result = onPress();
+      if (autoLoading && result && typeof (result as any).then === "function") {
+        setInternalLoading(true);
+        await result;
+      }
+    } finally {
+      if (autoLoading) setInternalLoading(false);
+    }
+  }, [onPress, autoLoading]);
 
   return (
     <Animated.View style={[fullWidth && { width: "100%" }, animated]}>
       <Pressable
         accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled, busy: isLoading }}
         testID={testID}
-        disabled={disabled || loading}
-        onPressIn={() =>
-          (scale.value = withTiming(0.95, {
+        disabled={isDisabled}
+        onPressIn={() => {
+          if (isDisabled) return;
+          scale.value = withTiming(0.95, {
             duration: 80,
             easing: Easing.out(Easing.quad),
-          }))
-        }
-        onPressOut={() => (scale.value = withSpring(1))}
-        onPress={onPress}
+          });
+        }}
+        onPressOut={() => {
+          if (isDisabled) return;
+          scale.value = withSpring(1);
+        }}
+        onPress={handlePress}
         onLongPress={onLongPress}
         style={[
           styles.btn,
-          { paddingVertical: padd, backgroundColor: bg, borderColor: border },
+          {
+            paddingVertical: padd,
+            backgroundColor: bg,
+            borderColor: border,
+            opacity: isDisabled ? 0.6 : 1,
+          },
           variant === "ghost" && { borderWidth: StyleSheet.hairlineWidth },
         ]}
       >
         <View style={styles.rowCenter}>
           {left ? <View style={{ marginRight: 8 }}>{left}</View> : null}
-          {loading ? (
-            <ActivityIndicator
-              size="small"
-              color={
-                variant === "ghost"
-                  ? isDark
-                    ? "#EAEAEA"
-                    : "#222"
-                  : isDark
-                    ? "#0B0B0B"
-                    : "#FFF"
-              }
-            />
+
+          {isLoading ? (
+            loadingText ? (
+              <Text style={[styles.btnText, { fontSize: fsize, color: fg }]}>
+                {loadingText}
+              </Text>
+            ) : (
+              <ActivityIndicator size={indicatorSize} color={spinnerColor} />
+            )
           ) : (
             <Text style={[styles.btnText, { fontSize: fsize, color: fg }]}>
               {title}
             </Text>
           )}
+
           {right ? <View style={{ marginLeft: 8 }}>{right}</View> : null}
         </View>
       </Pressable>
     </Animated.View>
   );
 }
-
 export type IconButtonProps = {
   onPress?: () => void;
   disabled?: boolean;

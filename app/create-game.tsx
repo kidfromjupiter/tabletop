@@ -49,13 +49,6 @@ export default function CreateGameScreen({
   const scoreLimit = useGameStore((state) => state.settings.scoreLimit);
   const handSize = useGameStore((state) => state.settings.handSize);
   const selectedPacks = useGameStore((state) => state.settings.packs);
-  // const [roomCode, setRoomCode] = React.useState(makeRoomCode());
-  // const [isPrivate, setIsPrivate] = React.useState(true);
-  // const [familyMode, setFamilyMode] = React.useState(false);
-  // const [roundLimit, setRoundLimit] = React.useState(8);
-  // const [scoreLimit, setScoreLimit] = React.useState(10);
-  // const [handSize, setHandSize] = React.useState(10);
-  // const [selectedPacks, setSelectedPacks] = React.useState<string[]>(["base"]);
 
   // Demo pack list (IDs + human labels). Replace with your real catalog.
   const packs = React.useMemo(
