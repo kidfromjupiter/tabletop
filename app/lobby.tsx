@@ -118,7 +118,7 @@ export default function LobbyScreen({
         .from("room_players")
         .select(
           `
-    room_id, user_id, role, is_ready, score, joined_at,
+    user_id, role, is_ready, score, joined_at,
     profiles ( display_name, avatar ),
     rooms!inner ( code )
   `
@@ -142,25 +142,14 @@ export default function LobbyScreen({
   // subbing to supabase
   useEffect(() => {
     (async () => {
-      let room_id = "";
       try {
-        const { data, error } = await supabase
-          .from("rooms")
-          .select("*")
-          .eq("code", settings?.roomCode)
-          .single();
-
-        if (!error && data) {
-          room_id = data.id;
-        }
-
         const supabaseChannel = supabase.channel("schema-db-changes").on(
           "postgres_changes",
           {
             event: "*",
             schema: "public",
             table: "room_players",
-            filter: `room_id=eq.${room_id}`,
+            filter: `room_code=eq.${settings?.roomCode}`,
           },
           (payload: RealtimePostgresChangesPayload<any>) => {
             (async () => {
