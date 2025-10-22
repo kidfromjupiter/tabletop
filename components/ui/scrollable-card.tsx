@@ -7,12 +7,14 @@ import {
 import Animated, {
   Extrapolation,
   interpolate,
-  runOnJS,
   SharedValue,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { runOnJS } from "react-native-worklets";
 import { Item } from "./repeating-card-stack/types";
 
 const PRESS_DURATION = 200;
@@ -38,7 +40,7 @@ export function ScrollableCard({
   scrollX: SharedValue<number>;
   index: number;
   id: string;
-  callback: (id: string) => void;
+  callback: (id: string) => Promise<boolean>;
   rotation?: number;
   yRange?: number;
 }) {
@@ -47,6 +49,24 @@ export function ScrollableCard({
   const opacity = useSharedValue(1);
   const scale = useSharedValue(1);
   const gestureActive = useSharedValue(false);
+  const gestureSuccess = useSharedValue(true);
+  const asyncCallback = async (id: string) => {
+    const result = await callback(id);
+    gestureSuccess.value = result;
+    //return result;
+  };
+  useAnimatedReaction(
+    () => gestureSuccess.value,
+    (success) => {
+      if (!success) {
+        // Reset position if the callback failed
+        opacity.value = withTiming(1, { duration: 150 });
+        scale.value = withTiming(1, { duration: 150 });
+        ty.value = withSpring(0);
+        gestureSuccess.value = true;
+      }
+    }
+  );
   const flingGesture = Gesture.Fling()
     .direction(Directions.UP)
     .onStart((e) => {
@@ -59,7 +79,8 @@ export function ScrollableCard({
       gestureActive.value = false;
       opacity.value = withTiming(0, { duration: 300 });
       console.log("END FLING");
-      runOnJS(callback)(id);
+
+      runOnJS(asyncCallback)(id);
     });
 
   const animatedStyles = useAnimatedStyle(() => {
@@ -102,7 +123,8 @@ export function ScrollableCard({
           index,
           index + displayedRangeFromCenter,
         ],
-        [-rotation, 0, rotation]
+        [-rotation, 0, rotation],
+        Extrapolation.CLAMP
       );
     }
     return {
@@ -116,7 +138,10 @@ export function ScrollableCard({
         {
           translateY: initialY.value + ty.value,
         },
-        { rotate: `${rot}deg` },
+        {
+          rotateY: `${rot}deg`,
+        },
+        //{ rotate: `${rot}deg` },
         { scale: scale.value },
       ],
     };

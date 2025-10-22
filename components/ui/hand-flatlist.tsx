@@ -1,4 +1,5 @@
 import { Dimensions } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -18,16 +19,16 @@ export default function SelfHand({
   gap = 5,
 }: {
   hand: Item[];
-  removeById: (id: string) => void;
+  removeById: (id: string) => Promise<boolean>;
   card_width: number;
   gap?: number;
 }) {
   const totalWidth = card_width + gap;
-  const animatedRef = useAnimatedRef<Animated.FlatList>();
+  const animatedRef = useAnimatedRef<FlatList>();
   const scrollOffset = useScrollOffset(animatedRef);
 
   return (
-    <Animated.FlatList
+    <FlatList
       data={hand}
       contentContainerStyle={{
         paddingHorizontal: (width - card_width) / 2,
@@ -41,10 +42,10 @@ export default function SelfHand({
       decelerationRate={"fast"}
       keyExtractor={(item) => item.id}
       // Animate item reflow on insert/remove/reorder
-      itemLayoutAnimation={LinearTransition.springify()
-        .damping(15)
-        .stiffness(450)
-        .mass(0.6)}
+      // itemLayoutAnimation={LinearTransition.springify()
+      //   .damping(15)
+      //   .stiffness(450)
+      //   .mass(0.6)}
       renderItem={({ item, index }) => (
         <Animated.View
           // This layout prop lets siblings reflow smoothly when items are removed.
@@ -62,6 +63,8 @@ export default function SelfHand({
               width: "100%",
               overflow: "visible",
             }}
+            rotation={35}
+            yRange={0}
             scrollX={scrollOffset}
             index={index}
             id={item.id}
@@ -72,6 +75,10 @@ export default function SelfHand({
       )}
       showsHorizontalScrollIndicator={false}
       removeClippedSubviews={true}
+      windowSize={1}
+      viewabilityConfig={{
+        itemVisiblePercentThreshold: 10,
+      }}
       scrollEventThrottle={16}
     />
   );

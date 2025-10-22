@@ -230,7 +230,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: { fontSize: 16, fontWeight: "700", letterSpacing: 0.2 },
-  link: { fontSize: 14, textDecorationLine: "underline", opacity: 0.9 },
+  link: {
+    fontSize: 14,
+    textDecorationLine: "underline",
+    opacity: 0.9,
+    color: "#5c5c5cff",
+  },
   footer: {
     textAlign: "center",
     fontSize: 12,

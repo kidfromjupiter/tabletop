@@ -1,7 +1,13 @@
 import { Item } from "@/components/ui/repeating-card-stack/types";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
-import { Dimensions, ImageBackground, StyleSheet, View } from "react-native";
+import {
+  Dimensions,
+  ImageBackground,
+  StyleSheet,
+  ToastAndroid,
+  View,
+} from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   useAnimatedScrollHandler,
@@ -104,7 +110,7 @@ export default function PlayerView() {
           event: "*",
           schema: "public",
           table: "round_submissions",
-          filter: `round_id=eq.${roundId}`,
+          filter: `round_id=eq.${roundId},user_id=neq.${me?.id}`,
         },
         async (payload: RealtimePostgresChangesPayload<any>) => {
           if (payload.eventType === "INSERT") {
@@ -163,11 +169,39 @@ export default function PlayerView() {
     oppScrollX.value = e.contentOffset.x / (OPP_CARD_WIDTH + OPP_GAP);
   });
 
-  const removeById = (id: string) => {
-    const item = hand.find((item) => item.id === id);
-    if (item) addToStack(item);
-    setHand((prev) => prev.filter((item) => item.id !== id));
+  const removeById = async (id: string) => {
+    const { data, error, response } = await supabase.functions.invoke(
+      "endpoints",
+      {
+        body: {
+          action: "submit_cards",
+          payload: {
+            round_id: roundId,
+            user_id: me?.id,
+            answer_card_ids: [id],
+          },
+        },
+      }
+    );
+    if (response?.status === 405) {
+      ToastAndroid.showWithGravity(
+        "Already submitted a card for this round!",
+        ToastAndroid.SHORT,
+        ToastAndroid.CENTER
+      );
+    }
+    //console.log("Submitted card response:", data, error, response);
+    if (!error) {
+      const item = hand.find((item) => item.id === id);
+      if (item) addToStack(item);
+      setHand((prev) => prev.filter((item) => item.id !== id));
+      return true;
+    } else {
+      //console.error("Error submitting cards:", error);
+      return false;
+    }
   };
+
   const addToStack = (item: Item) => setCards((prev) => [...prev, item]);
 
   return (
@@ -211,7 +245,7 @@ export default function PlayerView() {
             <SelfHand
               gap={CARD_GAP}
               hand={hand}
-              removeById={removeById}
+              removeById={removeById} // Directly pass the function
               card_width={CARD_WIDTH}
             />
           </View>
