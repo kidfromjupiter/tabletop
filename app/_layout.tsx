@@ -290,21 +290,6 @@ export default function RootLayout() {
         <Stack.Screen
           name="round-results"
           options={{ title: "Round Results" }}
-          initialParams={{
-            prompt: "Why can't I sleep at night?",
-            winner: { id: "p3", name: "Alex", avatar: "😎" },
-            winningCombo: { id: "c", texts: ["A mime having a stroke."] },
-            scoreboard: [
-              { id: "p3", name: "Alex", score: 3 },
-              { id: "p1", name: "Kavi", score: 2 },
-              { id: "p2", name: "Zee", score: 1 },
-            ],
-            onCreateGame: () => router.push("/create-game"),
-            onJoinGame: () => {
-              console.log("Clicked join game");
-              router.push("/join-game");
-            },
-          }}
         />
         <Stack.Screen
           name="reveal-sequence"
