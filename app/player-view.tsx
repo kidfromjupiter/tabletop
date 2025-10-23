@@ -20,10 +20,7 @@ import ConfirmModal from "@/components/ui/modal";
 import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
-import {
-  RealtimePostgresChangesPayload,
-  SupabaseClient,
-} from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { router, useNavigation } from "expo-router";
 
 const { width } = Dimensions.get("screen");
@@ -46,16 +43,17 @@ const handData: Item[] = [
 export default function PlayerView() {
   const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const navigation = useNavigation();
-  const [cards, setCards] = useState(data);
-  const [hand, setHand] = useState(handData);
-  // const hand = useGameStore((state) => state.hand);
+
+  // Zustand store hooks
+  const cards = useGameStore((state) => state.cards);
+  const hand = useGameStore((state) => state.hand);
+  const addCard = useGameStore((state) => state.addCard);
+  const removeCardFromHand = useGameStore((state) => state.removeCardFromHand);
 
   // nav guard + modal state
   const [confirmVisible, setConfirmVisible] = useState(false);
   const me = useGameStore((state) => state.me);
-  const roomCode = useGameStore((state) => state.settings.roomCode);
   const roundId = useGameStore((state) => state.round?.roundId);
-  const setRoundData = useGameStore((state) => state.startRound);
   const pendingActionRef = useRef<any>(null);
   const blockNavRef = useRef(true); // while true, back is intercepted
 
@@ -68,97 +66,6 @@ export default function PlayerView() {
       setConfirmVisible(true);
     });
     return unsub;
-  }, []);
-  useEffect(() => {
-    if (!me) return;
-    (async () => {
-      const { data: roomState } = await supabase.functions.invoke("endpoints", {
-        body: {
-          action: "room_state",
-          payload: {
-            room_code: roomCode,
-            user_id: me?.id,
-          },
-        },
-      });
-      const { data: submissions } = await supabase
-        .from("round_submissions")
-        .select(
-          "profiles(display_name, avatar, id), id, round_submission_items(answer_cards(text))"
-        )
-        .eq("round_id", roundId);
-      const submissionCards = submissions?.map((submission: any) => {
-        if (submission.profiles.id == me.id) {
-          // TODO: only works for 1 card submissions
-          return {
-            id: submission.id,
-            text: submission.round_submission_items[0].answer_cards.text,
-            backside: false,
-          };
-        }
-        return {
-          id: submission.id,
-          text: submission.profiles.display_name,
-          backside: true,
-        };
-      });
-      setRoundData(
-        roundId || "",
-        roomState.round.prompt.text,
-        roomState.round.pick_count,
-        roomState.round.judge_user_id
-      );
-      setHand(roomState.my_hand);
-      setCards([
-        {
-          id: roomState.round.prompt.id,
-          text: roomState.round.prompt.text,
-          prompt: true,
-        },
-        ...(submissionCards ? submissionCards : []),
-      ]);
-    })();
-  }, []);
-
-  useEffect(() => {
-    const sub = supabase
-      .channel("schema-db-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "round_submissions",
-          filter: `round_id=eq.${roundId}`,
-        },
-        async (payload: RealtimePostgresChangesPayload<any>) => {
-          if (payload.eventType === "INSERT") {
-            const submission_id = payload.new.id;
-            const { data } = await supabase
-              .from("profiles")
-              .select("display_name, avatar")
-              .eq("id", payload.new.user_id)
-              .single();
-            const card: Item = {
-              id: submission_id,
-              text: data?.display_name || "Anonymous",
-              backside: true,
-            };
-
-            setCards((prevCards) => [...prevCards, card]);
-          }
-          if (payload.eventType === "DELETE") {
-            const deletedSubmissionId = payload.old.id;
-            setCards((prevCards) =>
-              prevCards.filter((card) => card.id !== deletedSubmissionId)
-            );
-          }
-        }
-      )
-      .subscribe();
-    return () => {
-      sub.unsubscribe();
-    };
   }, []);
 
   const handleConfirmLeave = async () => {
@@ -209,19 +116,15 @@ export default function PlayerView() {
         ToastAndroid.CENTER
       );
     }
-    //console.log("Submitted card response:", data, error, response);
     if (!error) {
       const item = hand.find((item) => item.id === id);
-      if (item) addToStack(item);
-      setHand((prev) => prev.filter((item) => item.id !== id));
+      if (item) addCard(item);
+      removeCardFromHand(id);
       return true;
     } else {
-      //console.error("Error submitting cards:", error);
       return false;
     }
   };
-
-  const addToStack = (item: Item) => setCards((prev) => [...prev, item]);
 
   return (
     <GestureHandlerRootView>
@@ -238,14 +141,6 @@ export default function PlayerView() {
 
           <View style={{ flex: 1, width: "100%" }}>
             {/* Opponent hand (optional) */}
-            {/* <OpponentHand
-            hand={hand}
-            removeById={removeById}
-            scrollX={oppScrollX}
-            onScroll={oppOnScroll}
-            card_width={OPP_CARD_WIDTH}
-            gap={OPP_GAP}
-          /> */}
           </View>
 
           <View style={{ flex: 2, width: "100%", justifyContent: "center" }}>
@@ -271,8 +166,15 @@ export default function PlayerView() {
 
           <ConfirmModal
             visible={confirmVisible}
-            onCancel={handleCancelLeave}
-            onConfirm={handleConfirmLeave}
+            onCancel={() => setConfirmVisible(false)}
+            onConfirm={() => {
+              blockNavRef.current = false;
+              if (pendingActionRef.current) {
+                navigation.dispatch(pendingActionRef.current);
+              } else {
+                router.push("/welcome");
+              }
+            }}
           />
         </ImageBackground>
       </SafeAreaView>

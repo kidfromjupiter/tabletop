@@ -12,6 +12,7 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 //import { Button, IconButton } from "./ui.buttons";
 import { Button, IconButton } from "@/components/ui/button";
+import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
 
 /**
@@ -37,18 +38,12 @@ export type ScoreEntry = {
 };
 // =============== 2) RoundResultsScreen ===============
 export default function RoundResultsScreen({
-  prompt,
-  winner,
-  winningCombo,
   scoreboard,
   onNextRound,
   onSaveCombo,
   onShare,
   onBackToLobby,
 }: {
-  prompt: string;
-  winner: { id: string; name: string; avatar?: string };
-  winningCombo: Combo;
   scoreboard: ScoreEntry[]; // already sorted desc
   onNextRound?: () => void;
   onSaveCombo?: (combo: Combo) => void;
@@ -57,6 +52,15 @@ export default function RoundResultsScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const prompt = useGameStore((state) => state.round?.prompt || "");
+  const winner = useGameStore((state) =>
+    state.players.find((p) => p.id === state.round?.winnerId)
+  )!;
+  const winningCombo = useGameStore((state) =>
+    state.round?.submissions.find(
+      (s) => s.id === state.round?.winningSubmissionId
+    )
+  )!;
 
   // Small number pop for +1 point near winner row
   const pop = useSharedValue(0);

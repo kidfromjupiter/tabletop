@@ -68,14 +68,11 @@ export default function JudgeViewScreen({
   const revealedCount = submissions.filter((s) => s.revealed).length;
   const submittedCount = submissions.length;
   const everyoneSubmitted = submittedCount >= totalPlayers - 1; // judge doesn't submit
+  const meId = useGameStore((state) => state.me?.id);
 
   function handleSelect(id: string) {
     setSelectedId((prev) => (prev === id ? null : id));
     onPick?.(id);
-  }
-
-  function confirm() {
-    if (selectedId) onConfirm?.(selectedId);
   }
 
   const headerFg = isDark ? "#fff" : "#0B0B0B";
@@ -85,11 +82,26 @@ export default function JudgeViewScreen({
         action: "reveal_submission",
         payload: {
           round_id: roundId,
-          user_id: useGameStore.getState().me?.id,
+          user_id: meId,
           submission_id: submission_id,
         },
       },
     });
+  };
+
+  const confirmWinner = async () => {
+    if (!selectedId) return;
+    const { data, error } = await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "judge_pick",
+        payload: {
+          round_id: roundId,
+          user_id: meId,
+          submission_id: selectedId,
+        },
+      },
+    });
+    router.push("/round-results");
   };
   useEffect(() => {
     (async () => {
@@ -239,7 +251,7 @@ export default function JudgeViewScreen({
       <View style={styles.footer}>
         <Button
           title="Confirm Winner"
-          onPress={confirm}
+          onPress={confirmWinner}
           disabled={!selectedId}
         />
       </View>

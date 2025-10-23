@@ -1,3 +1,4 @@
+import { Item } from "@/components/ui/repeating-card-stack/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
@@ -63,6 +64,10 @@ export type StoreState = {
   busy: boolean;
   error?: string | null;
 
+  // cards and hand
+  cards: Item[];
+  hand: Item[];
+
   // ===== Actions =====
   reset: () => void;
 
@@ -105,11 +110,16 @@ export type StoreState = {
   submitForPlayer: (submission: Submission) => void;
   revealSubmission: (submissionId: string) => void;
   revealAll: () => void;
-  pickWinner: (submissionId: string) => void;
-  confirmWinner: () => void;
+  pickWinner: (submissionId: string, id: string) => void;
 
   // timer
   setTimer: (left: number, total: number) => void;
+
+  // cards and hand
+  setCards: (cards: Item[]) => void;
+  setHand: (hand: Item[]) => void;
+  addCard: (card: Item) => void;
+  removeCardFromHand: (id: string) => void;
 };
 
 const initialSettings: GameSettings = {
@@ -151,6 +161,10 @@ const initialState: Omit<
   | "confirmWinner"
   | "nextRound"
   | "setTimer"
+  | "setCards"
+  | "setHand"
+  | "addCard"
+  | "removeCardFromHand"
 > = {
   me: null,
   isHost: false,
@@ -163,6 +177,8 @@ const initialState: Omit<
   round: null,
   busy: false,
   error: null,
+  cards: [],
+  hand: [],
 };
 
 export const useGameStore = create<StoreState>()(
@@ -321,20 +337,9 @@ export const useGameStore = create<StoreState>()(
               : s.round,
           })),
 
-        pickWinner: (submissionId) =>
-          set((s) => ({
-            round: s.round
-              ? { ...s.round, winningSubmissionId: submissionId }
-              : s.round,
-          })),
-
-        confirmWinner: () =>
+        pickWinner: (submissionId, id) =>
           set((s) => {
-            if (!s.round?.winningSubmissionId) return {} as any;
-            const sub = s.round.submissions.find(
-              (x) => x.id === s.round!.winningSubmissionId
-            );
-            const winnerId = sub?.playerId;
+            const winnerId: string = id;
             // increment score in players
             const players = s.players.map((p) =>
               p.id === winnerId
@@ -347,6 +352,7 @@ export const useGameStore = create<StoreState>()(
               round: {
                 ...s.round!,
                 winnerId,
+                winningSubmissionId: submissionId,
                 submissions: s.round!.submissions.map((x) => ({
                   ...x,
                   revealed: true,
@@ -360,6 +366,14 @@ export const useGameStore = create<StoreState>()(
             round: s.round
               ? { ...s.round, timeLeftSec: left, timeTotalSec: total }
               : s.round,
+          })),
+
+        setCards: (cards) => set({ cards }),
+        setHand: (hand) => set({ hand }),
+        addCard: (card) => set((state) => ({ cards: [...state.cards, card] })),
+        removeCardFromHand: (id) =>
+          set((state) => ({
+            hand: state.hand.filter((item) => item.id !== id),
           })),
       }),
       {

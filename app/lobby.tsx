@@ -3,12 +3,9 @@ import RoomCard from "@/components/pages/lobby/room-card";
 import Rules from "@/components/pages/lobby/rules";
 import { Button, IconButton } from "@/components/ui/button";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
-import { useGameStore } from "@/lib/state";
+import { Player, useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  createClient,
-  RealtimePostgresChangesPayload,
-} from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "expo-router";
 import * as React from "react";
 import { useEffect } from "react";
@@ -36,14 +33,6 @@ import { runOnJS } from "react-native-worklets";
  * - Works for host and non-host views via `isHost`
  * - Uses your reusable animated Button components
  */
-
-export type Player = {
-  id: string;
-  name: string;
-  isHost?: boolean;
-  isReady?: boolean;
-  avatar?: string; // URL or emoji text
-};
 
 export type LobbySettings = {
   roomCode: string;
@@ -80,14 +69,9 @@ export default function LobbyScreen({
 
   // zustand
   const players = useGameStore((state) => state.players); // --- IGNORE ---
-  const setPlayers = useGameStore((state) => state.setPlayers); // --- IGNORE ---
-  const addPlayer = useGameStore((state) => state.addPlayer); // --- IGNORE ---
-  const updatePlayer = useGameStore((state) => state.updatePlayer); // --- IGNORE ---
-  const removePlayer = useGameStore((state) => state.removePlayer); // --- IGNORE ---
   const meId = useGameStore((state) => state.me?.id || ""); // Ensure meId is always a string
   const isHost = useGameStore((state) => state.isHost); // --- IGNORE ---
   const settings = useGameStore((state) => state.settings); // --- IGNORE ---
-  const setRound = useGameStore((state) => state.startRound); // --- IGNORE ---
 
   const router = useRouter();
 
@@ -111,117 +95,8 @@ export default function LobbyScreen({
       mounted = false;
     };
   }, [pulse]);
-  useEffect(() => {
-    (async () => {
-      setPlayers([]); // reset on mount
-      // Pull current state (join profiles for richer UI)
-      const { data, error } = await supabase
-        .from("room_players")
-        .select(
-          `
-    user_id, role, is_ready, score, joined_at,
-    profiles ( display_name, avatar ),
-    rooms!inner ( code )
-  `
-        )
-        .eq("rooms.code", settings?.roomCode) // filter on joined table
-        .order("joined_at", { ascending: true });
-      console.log("Lobby players fetch:", data, error);
-      if (!error && data) {
-        const mapped: Player[] = data.map((r: any) => ({
-          id: r.user_id,
-          name: r.profiles.display_name,
-          avatar: r.profiles.avatar,
-          isHost: r.role === "host",
-          isReady: r.is_ready,
-        }));
-        setPlayers(mapped);
-      }
-    })();
-  }, [settings?.roomCode]);
 
   // subbing to supabase
-  useEffect(() => {
-    (async () => {
-      try {
-        const supabaseChannel = supabase
-          .channel("schema-db-changes")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "rounds",
-              filter: `room_code=eq.${settings?.roomCode}`,
-            },
-            (payload: RealtimePostgresChangesPayload<any>) => {
-              if (payload.eventType === "INSERT") {
-                // created a new round, navigate to game view
-                const roundData = payload.new;
-
-                setRound(
-                  roundData.id,
-                  roundData.prompt,
-                  roundData.pick_count,
-                  roundData.judge_user_id
-                );
-                router.push("/game-view");
-              }
-            }
-          )
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "room_players",
-              filter: `room_code=eq.${settings?.roomCode}`,
-            },
-            (payload: RealtimePostgresChangesPayload<any>) => {
-              (async () => {
-                const { data, error } = await supabase
-                  .from("profiles")
-                  .select("*")
-                  .eq("id", payload.new.user_id)
-                  .single();
-
-                if (payload.eventType === "INSERT") {
-                  const newPlayer = payload.new;
-                  addPlayer({
-                    id: newPlayer.user_id,
-                    name: data.display_name,
-                    isHost: newPlayer.role == "host",
-                    isReady: newPlayer.is_ready,
-                    avatar: data.avatar,
-                  });
-                }
-                if (payload.eventType === "UPDATE") {
-                  const updatedPlayer = payload.new;
-                  updatePlayer(updatedPlayer.user_id, {
-                    name: data.display_name,
-                    isHost: updatedPlayer.role == "host",
-                    isReady: updatedPlayer.is_ready,
-                    avatar: data.avatar,
-                  });
-                }
-                if (payload.eventType === "DELETE") {
-                  const deletedPlayer = payload.old;
-                  removePlayer(deletedPlayer.user_id);
-                }
-              })();
-            }
-          );
-        supabaseChannel.subscribe();
-
-        return () => {
-          supabaseChannel.unsubscribe();
-        };
-      } catch (err) {
-        console.error("Error in useEffect async function:", err);
-      }
-    })();
-  }, []);
-
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
   }));

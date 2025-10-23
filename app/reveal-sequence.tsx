@@ -8,6 +8,7 @@ import {
   RealtimePostgresChangesPayload,
   SupabaseClient,
 } from "@supabase/supabase-js";
+import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, useColorScheme, View } from "react-native";
 import Animated, {
@@ -205,7 +206,10 @@ export default function RevealSequenceScreen({
         {!done && step < submissionCards.length - 1 ? (
           <Button title="Reveal Next" onPress={revealNext} />
         ) : (
-          <Button title="Continue" onPress={() => onFinished?.(winner?.id)} />
+          <Button
+            title="Continue"
+            onPress={() => router.push("/round-results")}
+          />
         )}
       </View>
     </SafeAreaView>
