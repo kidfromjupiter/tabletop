@@ -52,7 +52,7 @@ export default function WelcomeScreen({
   const [mounted, setMounted] = React.useState(true);
   const toPhase = useGameStore((state) => state.toPhase);
   const [centerOpen, setCenterOpen] = React.useState(false);
-  const [sheetOpen, setSheetOpen] = React.useState(true);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const room_code = useGameStore((state) => state.settings.roomCode);
   const me_id = useGameStore((state) => state.me?.id);
@@ -87,11 +87,14 @@ export default function WelcomeScreen({
         if (!roomState.ended_at && !roomState.round) {
           // room hasn't ended. game is still going. No round tho
           setGameResumeNextScreen("lobby");
+          setSheetOpen(true);
         } else {
           if (roomState.round.judge_user_id === me_id) {
             setGameResumeNextScreen("judge-view");
+            setSheetOpen(true);
           } else {
             setGameResumeNextScreen("player-view");
+            setSheetOpen(true);
           }
         }
       })();

@@ -24,7 +24,7 @@ import {
   RealtimePostgresChangesPayload,
   SupabaseClient,
 } from "@supabase/supabase-js";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 
 const { width } = Dimensions.get("screen");
 const CARD_WIDTH = width * 0.45;
@@ -82,13 +82,25 @@ export default function PlayerView() {
       });
       const { data: submissions } = await supabase
         .from("round_submissions")
-        .select("profiles(display_name, avatar), id")
+        .select(
+          "profiles(display_name, avatar, id), id, round_submission_items(answer_cards(text))"
+        )
         .eq("round_id", roundId);
-      const submissionCards = submissions?.map((submission: any) => ({
-        id: submission.id,
-        text: submission.profiles.display_name,
-        backside: true,
-      }));
+      const submissionCards = submissions?.map((submission: any) => {
+        if (submission.profiles.id == me.id) {
+          // TODO: only works for 1 card submissions
+          return {
+            id: submission.id,
+            text: submission.round_submission_items[0].answer_cards.text,
+            backside: false,
+          };
+        }
+        return {
+          id: submission.id,
+          text: submission.profiles.display_name,
+          backside: true,
+        };
+      });
       setHand(roomState.my_hand);
       setCards([
         {
@@ -154,7 +166,7 @@ export default function PlayerView() {
       } else {
         // fallback
         // @ts-ignore
-        navigation.goBack?.();
+        router.push("/welcome");
       }
     }
   };
