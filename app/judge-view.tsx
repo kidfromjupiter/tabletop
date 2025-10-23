@@ -29,7 +29,6 @@ export type Submission = {
 
 export default function JudgeViewScreen({
   pickCount = 1,
-  totalPlayers,
   timeLeftSec,
   timeTotalSec,
   onReveal,
@@ -41,7 +40,6 @@ export default function JudgeViewScreen({
   onBack,
 }: {
   pickCount?: number; // 1 or 2
-  totalPlayers: number;
   timeLeftSec?: number;
   timeTotalSec?: number;
   onReveal?: (id: string) => void;
@@ -62,11 +60,11 @@ export default function JudgeViewScreen({
   const submissions = useGameStore((state) => state.round?.submissions || []);
   const roundId = useGameStore((state) => state.round?.roundId);
   const [prompt, setPrompt] = React.useState("Loading prompt...");
+
   const [expectedSubmissions, setExpectedSubmissions] = React.useState(0);
 
   const revealedCount = submissions.filter((s) => s.revealed).length;
   const submittedCount = submissions.length;
-  const everyoneSubmitted = submittedCount >= totalPlayers - 1; // judge doesn't submit
   const meId = useGameStore((state) => state.me?.id);
 
   function handleSelect(id: string) {
@@ -100,7 +98,7 @@ export default function JudgeViewScreen({
         },
       },
     });
-    router.push("/round-results");
+    router.replace("/round-results");
   };
   useEffect(() => {
     (async () => {
@@ -115,14 +113,14 @@ export default function JudgeViewScreen({
       });
       setPrompt(roomState.round.prompt.text);
 
-      roomState.round.judge_view.map((submission: any) => {
+      // judge view isn't always available.
+      roomState.round.judge_view?.map((submission: any) => {
         submitForPlayer({
           id: submission.submission_id,
           texts: submission.cards.map((card: any) => card.text),
           revealed: false,
         });
       });
-
       setExpectedSubmissions(roomState.round.expected_submissions);
     })();
   }, []);

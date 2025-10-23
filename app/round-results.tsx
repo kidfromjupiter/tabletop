@@ -54,6 +54,10 @@ export default function RoundResultsScreen({
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
   const prompt = useGameStore((state) => state.round?.prompt || "");
+  console.log(
+    "useGameStore round in RoundResultsScreen:",
+    useGameStore.getState().round
+  );
   const winner = useGameStore((state) =>
     state.players.find((p) => p.id === state.round?.winnerId)
   )!;
@@ -117,12 +121,12 @@ export default function RoundResultsScreen({
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={styles.avatar}>{winner.avatar ?? "🏆"}</Text>
+            <Text style={styles.avatar}>{winner?.avatar ?? "🏆"}</Text>
             <View>
               <Text
                 style={[styles.winnerName, { color: isDark ? "#fff" : "#111" }]}
               >
-                {winner.name}
+                {winner?.name}
               </Text>
               <Text
                 style={[styles.subtle, { color: isDark ? "#CFCFCF" : "#666" }]}
@@ -135,12 +139,12 @@ export default function RoundResultsScreen({
         </View>
 
         <View style={{ marginTop: 10, gap: 6 }}>
-          {winningCombo.texts.map((t, idx) => (
+          {winningCombo?.texts.map((t, idx) => (
             <Text
               key={idx}
               style={[styles.comboText, { color: isDark ? "#fff" : "#111" }]}
             >
-              {winningCombo.texts.length > 1 ? `${idx + 1}. ` : ""}
+              {winningCombo?.texts.length > 1 ? `${idx + 1}. ` : ""}
               {t}
             </Text>
           ))}

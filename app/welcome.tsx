@@ -262,7 +262,7 @@ export default function WelcomeScreen({
               title="Yes"
               onPress={() => {
                 if (gameResumeNextScreen) {
-                  router.push(`/${gameResumeNextScreen}`);
+                  router.replace(`/${gameResumeNextScreen}`);
                   setSheetOpen(false);
                 }
               }}

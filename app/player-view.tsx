@@ -80,7 +80,7 @@ export default function PlayerView() {
       } else {
         // fallback
         // @ts-ignore
-        router.push("/welcome");
+        router.replace("/welcome");
       }
     }
   };
@@ -172,7 +172,7 @@ export default function PlayerView() {
               if (pendingActionRef.current) {
                 navigation.dispatch(pendingActionRef.current);
               } else {
-                router.push("/welcome");
+                router.replace("/welcome");
               }
             }}
           />

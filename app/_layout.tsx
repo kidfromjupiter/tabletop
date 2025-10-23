@@ -139,10 +139,6 @@ export default function RootLayout() {
             router.replace("/game-view");
           }
           if (payload.eventType === "UPDATE") {
-            if (payload.new.status === "ended") {
-              // round ended, navigate to round results
-              router.replace("/round-results");
-            }
             if (payload.new.winning_submission_id) {
               const { data } = await supabase
                 .from("round_submissions")
@@ -155,6 +151,11 @@ export default function RootLayout() {
                 data?.profiles.id
               );
             }
+
+            //if (payload.new.status === "ended") {
+            //  // round ended, navigate to round results
+            //  router.replace("/round-results");
+            //}
           }
         }
       )
