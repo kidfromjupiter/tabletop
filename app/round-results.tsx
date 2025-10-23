@@ -23,7 +23,12 @@ import { Ionicons } from "@expo/vector-icons";
 
 // ---------------- Types ----------------
 export type Combo = { id: string; texts: string[] };
-export type RevealItem = { id: string; texts: string[]; isWinner?: boolean };
+export type RevealItem = {
+  id: string;
+  texts: string[];
+  isWinner?: boolean;
+  visible?: boolean;
+};
 export type ScoreEntry = {
   id: string;
   name: string;

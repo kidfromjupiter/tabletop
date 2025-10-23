@@ -214,14 +214,26 @@ export default function WelcomeScreen({
               accessibilityRole="button"
               onPress={() => router.push("/player-view")}
             >
-              <Text style={styles.link}>How it works</Text>
+              <Text style={styles.link}>Player view</Text>
             </Pressable>
-            <Text style={{ opacity: 0.5 }}>|</Text>
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/judge-view")}
             >
-              <Text style={styles.link}>Settings</Text>
+              <Text style={styles.link}>Judge view</Text>
+            </Pressable>
+            <Text style={{ opacity: 0.5 }}>|</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/round-results")}
+            >
+              <Text style={styles.link}>results</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/reveal-sequence")}
+            >
+              <Text style={styles.link}>Reveal Sequence</Text>
             </Pressable>
           </View>
 

@@ -1,7 +1,13 @@
 import type { RevealItem } from "@/app/round-results";
 import { RevealRow } from "@/components/pages/round-results/reveal-row";
 import { Button, IconButton } from "@/components/ui/button";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
+import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  RealtimePostgresChangesPayload,
+  SupabaseClient,
+} from "@supabase/supabase-js";
 import React from "react";
 import { StyleSheet, Text, useColorScheme, View } from "react-native";
 import Animated, {
@@ -11,15 +17,11 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RevealSequenceScreen({
-  prompt,
-  items,
-  autoPlay = true,
+  autoPlay = false,
   autoDelayMs = 900,
   onFinished,
   onBack,
 }: {
-  prompt: string;
-  items: RevealItem[]; // order of reveal (already shuffled)
   autoPlay?: boolean;
   autoDelayMs?: number;
   onFinished?: (winnerId?: string) => void; // called after winner highlight shown
@@ -27,38 +29,131 @@ export default function RevealSequenceScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const prompt = useGameStore((state) => state.round?.prompt || "");
+  const [submissionCards, setSubmissionCards] = React.useState<RevealItem[]>(
+    []
+  );
 
   const [step, setStep] = React.useState(0); // index of the last revealed item (inclusive)
   const [done, setDone] = React.useState(false);
 
-  const winner = items.find((i) => i.isWinner);
+  const winner = submissionCards.find((i) => i.isWinner);
+  const roundId = useGameStore((state) => state.round?.roundId);
+  const meId = useGameStore((state) => state.me?.id);
+  const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Autoplay reveal
   React.useEffect(() => {
     if (!autoPlay) return;
     if (done) return;
-    if (step >= items.length - 1) return; // last item already revealed
+    if (step >= submissionCards.length - 1) return; // last item already revealed
     const t = setTimeout(
-      () => setStep((s) => Math.min(s + 1, items.length - 1)),
+      () => setStep((s) => Math.min(s + 1, submissionCards.length - 1)),
       autoDelayMs
     );
     return () => clearTimeout(t);
-  }, [step, autoPlay, autoDelayMs, done, items.length]);
+  }, [step, autoPlay, autoDelayMs, done, submissionCards.length]);
 
   // Once all revealed, show a brief winner highlight then finish
   React.useEffect(() => {
-    if (step >= items.length - 1 && !done) {
+    if (step >= submissionCards.length - 1 && !done) {
       const t = setTimeout(() => {
         setDone(true);
         onFinished?.(winner?.id);
       }, 1200);
       return () => clearTimeout(t);
     }
-  }, [step, items.length, done, onFinished, winner?.id]);
+  }, [step, submissionCards.length, done, onFinished, winner?.id]);
+
+  React.useEffect(() => {
+    (async () => {
+      const { data: submissions } = await supabase
+        .from("round_submissions")
+        .select(
+          "profiles(display_name, avatar, id), id, round_submission_items(answer_cards(text)), revealed"
+        )
+        .eq("round_id", roundId);
+      const submissionCards = submissions?.map((submission: any) => {
+        return {
+          id: submission.id,
+          texts: submission.round_submission_items.map(
+            (item: any) => item.answer_cards.text
+          ),
+          visible: submission.revealed,
+        };
+      });
+      setSubmissionCards(submissionCards || []);
+    })();
+    const sub = supabase.channel("schema-db-changes").on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "round_submissions",
+        filter: `round_id=eq.${roundId}`,
+      },
+      async (payload: RealtimePostgresChangesPayload<any>) => {
+        if (payload.eventType === "UPDATE") {
+          const { data, error } = await supabase
+            .from("round_submissions")
+            .select(
+              "profiles(display_name, avatar, id), round_submission_items(answer_cards(text))"
+            )
+            .eq("id", payload.new.id)
+            .single();
+          if (data) {
+            setSubmissionCards((items) =>
+              items.map((item) =>
+                item.id === payload.new.id
+                  ? {
+                      id: payload.new.id,
+                      texts: data.round_submission_items.map(
+                        (item: any) => item.answer_cards.text
+                      ),
+                      visible: payload.new.revealed,
+                    }
+                  : item
+              )
+            );
+          }
+        }
+        if (payload.eventType === "INSERT") {
+          const { data, error } = await supabase
+            .from("round_submissions")
+            .select(
+              "profiles(display_name, avatar, id), round_submission_items(answer_cards(text))"
+            )
+            .eq("id", payload.new.id)
+            .single();
+          if (data) {
+            setSubmissionCards([
+              ...submissionCards,
+              {
+                id: payload.new.id,
+                texts: data.round_submission_items.map(
+                  (item: any) => item.answer_cards.text
+                ),
+                visible: payload.new.revealed,
+
+                //isWinner: data.profiles.id === meId && payload.new.is_winner,
+              },
+            ]);
+            console.log("Received revealed submission:", data);
+          }
+
+          // Update local state with new data
+        }
+      }
+    );
+    sub.subscribe();
+    return () => {
+      sub.unsubscribe();
+    };
+  }, []);
 
   function revealNext() {
     if (done) return;
-    setStep((s) => Math.min(s + 1, items.length - 1));
+    setStep((s) => Math.min(s + 1, submissionCards.length - 1));
   }
 
   return (
@@ -90,7 +185,7 @@ export default function RevealSequenceScreen({
 
       {/* Reveal list */}
       <Animated.FlatList
-        data={items}
+        data={submissionCards}
         keyExtractor={(i) => i.id}
         contentContainerStyle={{ padding: 12, paddingBottom: 120, gap: 12 }}
         itemLayoutAnimation={LinearTransition.springify()}
@@ -98,8 +193,8 @@ export default function RevealSequenceScreen({
           <RevealRow
             key={item.id}
             item={item}
-            visible={index <= step}
-            isWinner={!!item.isWinner && step >= items.length - 1}
+            visible={item.visible || false}
+            isWinner={!!item.isWinner && step >= submissionCards.length - 1}
             isDark={isDark}
           />
         )}
@@ -107,7 +202,7 @@ export default function RevealSequenceScreen({
 
       {/* Footer controls */}
       <View style={styles.footer}>
-        {!done && step < items.length - 1 ? (
+        {!done && step < submissionCards.length - 1 ? (
           <Button title="Reveal Next" onPress={revealNext} />
         ) : (
           <Button title="Continue" onPress={() => onFinished?.(winner?.id)} />

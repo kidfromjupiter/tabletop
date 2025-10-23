@@ -177,6 +177,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
+    paddingVertical: 20,
   },
   gradientFill: {
     opacity: 1,

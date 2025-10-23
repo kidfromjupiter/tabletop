@@ -55,6 +55,7 @@ export default function PlayerView() {
   const me = useGameStore((state) => state.me);
   const roomCode = useGameStore((state) => state.settings.roomCode);
   const roundId = useGameStore((state) => state.round?.roundId);
+  const setRoundData = useGameStore((state) => state.startRound);
   const pendingActionRef = useRef<any>(null);
   const blockNavRef = useRef(true); // while true, back is intercepted
 
@@ -101,6 +102,12 @@ export default function PlayerView() {
           backside: true,
         };
       });
+      setRoundData(
+        roundId || "",
+        roomState.round.prompt.text,
+        roomState.round.pick_count,
+        roomState.round.judge_user_id
+      );
       setHand(roomState.my_hand);
       setCards([
         {
@@ -122,7 +129,7 @@ export default function PlayerView() {
           event: "*",
           schema: "public",
           table: "round_submissions",
-          filter: `round_id=eq.${roundId},user_id=neq.${me?.id}`,
+          filter: `round_id=eq.${roundId}`,
         },
         async (payload: RealtimePostgresChangesPayload<any>) => {
           if (payload.eventType === "INSERT") {

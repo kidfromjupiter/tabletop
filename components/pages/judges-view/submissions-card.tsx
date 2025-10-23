@@ -35,11 +35,12 @@ export default function SubmissionCard({
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
-  const flip = useSharedValue(item.revealed ? 1 : 0); // 0 = hidden back, 1 = revealed front
+  const [revealed, setRevealed] = React.useState(item.revealed || false);
+  const flip = useSharedValue(revealed ? 1 : 0); // 0 = hidden back, 1 = revealed front
 
   useEffect(() => {
-    flip.value = withTiming(item.revealed ? 1 : 0, { duration: 240 });
-  }, [item.revealed, flip]);
+    flip.value = withTiming(revealed ? 1 : 0, { duration: 240 });
+  }, [revealed, flip]);
 
   const frontStyle = useAnimatedStyle(() => ({
     transform: [{ rotateY: `${interpolate(flip.value, [0, 1], [180, 0])}deg` }],
@@ -58,9 +59,9 @@ export default function SubmissionCard({
   }));
 
   function handlePress() {
-    if (!item.revealed) {
+    if (!revealed) {
       onReveal();
-      item.revealed = true; // prevent double-reveal taps
+      setRevealed(true);
     } else {
       onSelect();
     }
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
   },
-  whiteText: { fontSize: 14, fontWeight: "700", lineHeight: 20, color: "#111" },
+  whiteText: { fontSize: 16, fontWeight: "700", lineHeight: 20, color: "#111" },
   maskRows: { gap: 8 },
   mask: {
     height: 14,

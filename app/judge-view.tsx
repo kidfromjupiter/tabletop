@@ -79,6 +79,18 @@ export default function JudgeViewScreen({
   }
 
   const headerFg = isDark ? "#fff" : "#0B0B0B";
+  const revealCard = async (submission_id: string) => {
+    const { data, error } = await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "reveal_submission",
+        payload: {
+          round_id: roundId,
+          user_id: useGameStore.getState().me?.id,
+          submission_id: submission_id,
+        },
+      },
+    });
+  };
   useEffect(() => {
     (async () => {
       const { data: roomState } = await supabase.functions.invoke("endpoints", {
@@ -216,7 +228,7 @@ export default function JudgeViewScreen({
             key={item.id}
             item={item}
             isSelected={selectedId === item.id}
-            onReveal={() => onReveal?.(item.id)}
+            onReveal={() => revealCard(item.id)}
             onSelect={() => handleSelect(item.id)}
             pickCount={pickCount}
           />
