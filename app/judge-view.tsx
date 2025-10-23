@@ -4,10 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  RealtimePostgresChangesPayload,
-  SupabaseClient,
-} from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { router } from "expo-router";
 import * as React from "react";
 import { useEffect } from "react";
@@ -60,7 +57,9 @@ export default function JudgeViewScreen({
   const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [submissions, setSubmissions] = React.useState<Submission[]>([]);
+  //const [submissions, setSubmissions] = React.useState<Submission[]>([]);
+  const submitForPlayer = useGameStore((state) => state.submitForPlayer);
+  const submissions = useGameStore((state) => state.round?.submissions || []);
   const roundId = useGameStore((state) => state.round?.roundId);
   const [prompt, setPrompt] = React.useState("Loading prompt...");
   const [expectedSubmissions, setExpectedSubmissions] = React.useState(0);
@@ -115,54 +114,17 @@ export default function JudgeViewScreen({
         },
       });
       setPrompt(roomState.round.prompt.text);
-      const submissionCards: Submission[] = roomState.round.judge_view.map(
-        (submission: any) => {
-          return {
-            id: submission.submission_id,
-            texts: submission.cards.map((card: any) => card.text),
-            revealed: false,
-          };
-        }
-      );
-      setSubmissions(submissionCards);
+
+      roomState.round.judge_view.map((submission: any) => {
+        submitForPlayer({
+          id: submission.submission_id,
+          texts: submission.cards.map((card: any) => card.text),
+          revealed: false,
+        });
+      });
 
       setExpectedSubmissions(roomState.round.expected_submissions);
     })();
-  }, []);
-
-  useEffect(() => {
-    const subscription = supabase.channel("schema-db-changes").on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "round_submissions",
-        filter: `round_id=eq.${roundId}`,
-      },
-      async (payload: RealtimePostgresChangesPayload<any>) => {
-        if (payload.eventType === "INSERT") {
-          const submission_id = payload.new.id;
-          const { data } = await supabase
-            .from("round_submission_items")
-            .select("answer_cards(text), id")
-            .eq("id", payload.new.id)
-            .single();
-          const card: Submission = {
-            id: submission_id,
-            texts: [data?.answer_cards[0].text],
-            revealed: false,
-          };
-
-          setSubmissions((prevCards) => [...prevCards, card]);
-        }
-        // handle insert/update/delete
-      }
-    );
-
-    subscription.subscribe();
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   return (
@@ -202,7 +164,7 @@ export default function JudgeViewScreen({
         <Text style={styles.promptText}>{prompt}</Text>
         <View style={styles.metaRow}>
           <Progress
-            value={timeLeftSec ?? 0}
+            value={(submissions.length / expectedSubmissions) * 100}
             indicatorClassName="bg-purple-400"
           />
         </View>

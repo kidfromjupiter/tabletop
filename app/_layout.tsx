@@ -97,7 +97,6 @@ export default function RootLayout() {
               )
               .eq("id", payload.new.id)
               .single();
-            console.log("Submission data:", data);
             if (payload.new.user_id !== me?.id) {
               // not my own card. so should show backside
               const card: Item = {
@@ -137,12 +136,12 @@ export default function RootLayout() {
               roundData.pick_count,
               roundData.judge_user_id
             );
-            router.push("/game-view");
+            router.replace("/game-view");
           }
           if (payload.eventType === "UPDATE") {
             if (payload.new.status === "ended") {
               // round ended, navigate to round results
-              router.push("/round-results");
+              router.replace("/round-results");
             }
             if (payload.new.winning_submission_id) {
               const { data } = await supabase

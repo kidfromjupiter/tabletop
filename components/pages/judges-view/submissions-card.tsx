@@ -66,6 +66,7 @@ export default function SubmissionCard({
       onSelect();
     }
   }
+  console.log(item);
 
   return (
     <Animated.View

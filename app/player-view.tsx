@@ -133,7 +133,7 @@ export default function PlayerView() {
           style={{ flex: 1, width: "100%" }}
           source={require("../assets/images/bg.jpg")}
           imageStyle={{
-            opacity: 0.3,
+            opacity: 0.7,
             resizeMode: "cover",
           }}
         >
@@ -185,7 +185,7 @@ export default function PlayerView() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0E0E0E",
+    backgroundColor: "#000000ff",
     alignItems: "center",
     justifyContent: "center",
   },

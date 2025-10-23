@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, IconButton } from "@/components/ui/button";
 import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 /**
  * RevealAndResultsScreens.tsx
@@ -206,7 +207,7 @@ export default function RoundResultsScreen({
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Button title="Next Round" onPress={onNextRound} />
+        <Button title="Next Round" onPress={() => router.push("/lobby")} />
       </View>
     </SafeAreaView>
   );
