@@ -7,12 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { PortalHost } from "@rn-primitives/portal";
 import { Stack, useRouter } from "expo-router";
-
-export const unstable_settings = {
-  anchor: "welcome",
-};
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -26,6 +21,7 @@ export default function RootLayout() {
           headerShown: false,
           headerStyle: { backgroundColor: "#F6F6F8" },
           headerTintColor: "#111",
+          freezeOnBlur: true,
         }}
       >
         <Stack.Screen
@@ -139,7 +135,6 @@ export default function RootLayout() {
         />
       </Stack>
 
-      <PortalHost />
       <StatusBar style="auto" />
     </ThemeProvider>
   );

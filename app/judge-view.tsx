@@ -1,8 +1,16 @@
 import SubmissionCard from "@/components/pages/judges-view/submissions-card";
 import { Button, IconButton } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
+import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  RealtimePostgresChangesPayload,
+  SupabaseClient,
+} from "@supabase/supabase-js";
+import { router } from "expo-router";
 import * as React from "react";
+import { useEffect } from "react";
 import { FlatList, StyleSheet, Text, useColorScheme, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,9 +31,7 @@ export type Submission = {
 };
 
 export default function JudgeViewScreen({
-  prompt,
   pickCount = 1,
-  submissions,
   totalPlayers,
   timeLeftSec,
   timeTotalSec,
@@ -37,9 +43,7 @@ export default function JudgeViewScreen({
   onShuffle,
   onBack,
 }: {
-  prompt: string;
   pickCount?: number; // 1 or 2
-  submissions: Submission[];
   totalPlayers: number;
   timeLeftSec?: number;
   timeTotalSec?: number;
@@ -53,8 +57,13 @@ export default function JudgeViewScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [submissions, setSubmissions] = React.useState<Submission[]>([]);
+  const roundId = useGameStore((state) => state.round?.roundId);
+  const [prompt, setPrompt] = React.useState("Loading prompt...");
+  const [expectedSubmissions, setExpectedSubmissions] = React.useState(0);
 
   const revealedCount = submissions.filter((s) => s.revealed).length;
   const submittedCount = submissions.length;
@@ -70,6 +79,67 @@ export default function JudgeViewScreen({
   }
 
   const headerFg = isDark ? "#fff" : "#0B0B0B";
+  useEffect(() => {
+    (async () => {
+      const { data: roomState } = await supabase.functions.invoke("endpoints", {
+        body: {
+          action: "room_state",
+          payload: {
+            room_code: useGameStore.getState().settings.roomCode,
+            user_id: useGameStore.getState().me?.id,
+          },
+        },
+      });
+      setPrompt(roomState.round.prompt.text);
+      const submissionCards: Submission[] = roomState.round.judge_view.map(
+        (submission: any) => {
+          return {
+            id: submission.submission_id,
+            texts: submission.cards.map((card: any) => card.text),
+            revealed: false,
+          };
+        }
+      );
+      setSubmissions(submissionCards);
+
+      setExpectedSubmissions(roomState.round.expected_submissions);
+    })();
+  }, []);
+
+  useEffect(() => {
+    const subscription = supabase.channel("schema-db-changes").on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "round_submissions",
+        filter: `round_id=eq.${roundId}`,
+      },
+      async (payload: RealtimePostgresChangesPayload<any>) => {
+        if (payload.eventType === "INSERT") {
+          const submission_id = payload.new.id;
+          const { data } = await supabase
+            .from("round_submission_items")
+            .select("answer_cards(text), id")
+            .eq("id", payload.new.id)
+            .single();
+          const card: Submission = {
+            id: submission_id,
+            texts: [data?.answer_cards[0].text],
+            revealed: false,
+          };
+
+          setSubmissions((prevCards) => [...prevCards, card]);
+        }
+        // handle insert/update/delete
+      }
+    );
+
+    subscription.subscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <SafeAreaView
@@ -77,16 +147,16 @@ export default function JudgeViewScreen({
     >
       {/* Header */}
       <View style={styles.header}>
-        <IconButton variant="ghost" onPress={onBack}>
+        <IconButton variant="ghost" onPress={() => router.back()}>
           <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
         </IconButton>
         <Text style={[styles.title, { color: headerFg }]}>Judge</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <IconButton variant="ghost" onPress={onShuffle}>
-            ⟳
+            <Ionicons name="refresh-sharp" size={24} color="currentColor" />
           </IconButton>
           <IconButton variant="ghost" onPress={onSkip}>
-            ⏭
+            <Ionicons name="play-forward" size={24} color="currentColor" />
           </IconButton>
         </View>
       </View>
@@ -114,7 +184,7 @@ export default function JudgeViewScreen({
         </View>
         <View style={styles.metaRow}>
           <Text style={styles.metaText}>
-            Submissions: {submittedCount}/{Math.max(totalPlayers - 1, 0)}
+            Submissions: {submittedCount}/{expectedSubmissions}
           </Text>
           <Text style={styles.metaDot}>•</Text>
           <Text style={styles.metaText}>
