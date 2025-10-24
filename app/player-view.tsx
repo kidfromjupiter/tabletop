@@ -222,12 +222,7 @@ export default function PlayerView() {
             visible={confirmVisible}
             onCancel={() => setConfirmVisible(false)}
             onConfirm={() => {
-              blockNavRef.current = false;
-              if (pendingActionRef.current) {
-                navigation.dispatch(pendingActionRef.current);
-              } else {
-                router.replace("/welcome");
-              }
+              router.push("/welcome");
             }}
           />
         </ImageBackground>

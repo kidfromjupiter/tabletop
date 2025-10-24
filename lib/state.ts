@@ -10,6 +10,7 @@ export type Player = {
   avatar?: string; // emoji or url
   isHost?: boolean;
   isReady?: boolean;
+  score?: number;
 };
 
 export type GameSettings = {

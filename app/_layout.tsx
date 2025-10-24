@@ -24,7 +24,6 @@ export default function RootLayout() {
   const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const roundId = useGameStore((state) => state.round?.roundId);
   const addCard = useGameStore((state) => state.addCard);
-  const removeCardFromHand = useGameStore((state) => state.removeCardFromHand);
   const me = useGameStore((state) => state.me);
   const roomCode = useGameStore((state) => state.settings.roomCode);
   const setRoundData = useGameStore((state) => state.startRound);
@@ -66,6 +65,7 @@ export default function RootLayout() {
           avatar: r.profiles.avatar,
           isHost: r.role === "host",
           isReady: r.is_ready,
+          score: r.score,
         }));
         setPlayers(mapped);
       }
@@ -187,6 +187,7 @@ export default function RootLayout() {
               isHost: newPlayer.role == "host",
               isReady: newPlayer.is_ready,
               avatar: data.avatar,
+              score: newPlayer.score,
             });
           }
           if (payload.eventType === "UPDATE") {
@@ -196,6 +197,7 @@ export default function RootLayout() {
               isHost: updatedPlayer.role == "host",
               isReady: updatedPlayer.is_ready,
               avatar: data.avatar,
+              score: updatedPlayer.score,
             });
           }
           if (payload.eventType === "DELETE") {

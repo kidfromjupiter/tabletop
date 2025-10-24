@@ -53,6 +53,13 @@ export default function RoundResultsScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const players = useGameStore((state) =>
+    state.players.sort((a, b) => {
+      const scoreA = a.score || 0;
+      const scoreB = b.score || 0;
+      return scoreB - scoreA;
+    })
+  );
   const prompt = useGameStore((state) => state.round?.prompt || "");
   console.log(
     "useGameStore round in RoundResultsScreen:",
@@ -182,7 +189,7 @@ export default function RoundResultsScreen({
           Scoreboard
         </Text>
         <FlatList
-          data={scoreboard}
+          data={players}
           keyExtractor={(s) => s.id}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           renderItem={({ item }) => (
