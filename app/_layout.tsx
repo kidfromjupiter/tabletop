@@ -16,6 +16,7 @@ import {
 } from "@supabase/supabase-js";
 import { Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -88,6 +89,7 @@ export default function RootLayout() {
               .select(
                 `
     id,
+    user_id,
     profiles ( id, display_name ),
     round_submission_items (
       submission_id,
@@ -112,6 +114,7 @@ export default function RootLayout() {
               // @ts-ignore
               texts: [data?.round_submission_items[0].answer_cards.text],
               revealed: false,
+              playerId: data?.user_id,
             });
           }
         }
@@ -263,111 +266,117 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          headerStyle: { backgroundColor: "#F6F6F8" },
-          headerTintColor: "#111",
-          freezeOnBlur: true,
-        }}
-      >
-        <Stack.Screen
-          name="welcome"
-          options={{ title: "Welcome" }}
-          initialParams={{
-            appName: "Tabletop Party",
-            tagline: "A terrible game for terribly funny people.",
+      <SafeAreaProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            headerStyle: { backgroundColor: "#F6F6F8" },
+            headerTintColor: "#111",
+            freezeOnBlur: true,
           }}
-        />
-        <Stack.Screen
-          name="player-view"
-          options={{ title: "Game" }}
-          initialParams={{
-            roomCode: "ABCD5",
-            playerId: "p1",
-          }}
-        />
-        <Stack.Screen
-          name="round-results"
-          options={{ title: "Round Results" }}
-        />
-        <Stack.Screen
-          name="reveal-sequence"
-          options={{ title: "Reveal Sequence" }}
-          initialParams={{
-            prompt: "Why can't I sleep at night?",
-            items: [
-              {
-                id: "a",
-                texts: ["A romantic candlelit dinner with homicide."],
-              },
-              { id: "b", texts: ["Bees?"] },
-              { id: "c", texts: ["A mime having a stroke."], isWinner: true },
-            ],
-          }}
-        />
-        <Stack.Screen
-          name="judge-view"
-          options={{ title: "Judge View" }}
-          initialParams={{
-            prompt: "Why can't I sleep at night?",
-            pickCount: 1,
-            submissions: [
-              {
-                id: "a",
-                texts: ["A romantic candlelit dinner with homicide."],
-                revealed: false,
-              },
-              { id: "b", texts: ["Bees?"], revealed: true },
-              { id: "c", texts: ["A mime having a stroke."], revealed: false },
-              {
-                id: "d",
-                texts: ["The miracle of childbirth."],
-                revealed: true,
-              },
-            ],
-            totalPlayers: 5,
-            timeLeftSec: 20,
-            timeTotalSec: 60,
-          }}
-        />
-        <Stack.Screen
-          name="lobby"
-          options={{ title: "Lobby" }}
-          initialParams={{
-            isHost: true,
-            players: [
-              { id: "1", name: "Kavi", isHost: true, isReady: true },
-              { id: "2", name: "Alex", isReady: false },
-            ],
-            meId: "1",
-            settings: {
+        >
+          <Stack.Screen
+            name="welcome"
+            options={{ title: "Welcome" }}
+            initialParams={{
+              appName: "Tabletop Party",
+              tagline: "A terrible game for terribly funny people.",
+            }}
+          />
+          <Stack.Screen
+            name="player-view"
+            options={{ title: "Game" }}
+            initialParams={{
               roomCode: "ABCD5",
-              isPrivate: true,
-              familyMode: false,
-              roundLimit: 8,
-              scoreLimit: 10,
-              handSize: 10,
-              packs: ["Base", "Party"],
-            },
-          }}
-        />
-        <Stack.Screen
-          name="create-game"
-          options={{ title: "Create Game" }}
-          initialParams={{ defaultName: "" }}
-        />
-        <Stack.Screen
-          name="join-game"
-          options={{ title: "Join Game" }}
-          initialParams={{
-            defaultName: "Alex",
-            lastSession: { roomCode: "ABCD5", name: "Alex" },
-          }}
-        />
-      </Stack>
+              playerId: "p1",
+            }}
+          />
+          <Stack.Screen
+            name="round-results"
+            options={{ title: "Round Results" }}
+          />
+          <Stack.Screen
+            name="reveal-sequence"
+            options={{ title: "Reveal Sequence" }}
+            initialParams={{
+              prompt: "Why can't I sleep at night?",
+              items: [
+                {
+                  id: "a",
+                  texts: ["A romantic candlelit dinner with homicide."],
+                },
+                { id: "b", texts: ["Bees?"] },
+                { id: "c", texts: ["A mime having a stroke."], isWinner: true },
+              ],
+            }}
+          />
+          <Stack.Screen
+            name="judge-view"
+            options={{ title: "Judge View" }}
+            initialParams={{
+              prompt: "Why can't I sleep at night?",
+              pickCount: 1,
+              submissions: [
+                {
+                  id: "a",
+                  texts: ["A romantic candlelit dinner with homicide."],
+                  revealed: false,
+                },
+                { id: "b", texts: ["Bees?"], revealed: true },
+                {
+                  id: "c",
+                  texts: ["A mime having a stroke."],
+                  revealed: false,
+                },
+                {
+                  id: "d",
+                  texts: ["The miracle of childbirth."],
+                  revealed: true,
+                },
+              ],
+              totalPlayers: 5,
+              timeLeftSec: 20,
+              timeTotalSec: 60,
+            }}
+          />
+          <Stack.Screen
+            name="lobby"
+            options={{ title: "Lobby" }}
+            initialParams={{
+              isHost: true,
+              players: [
+                { id: "1", name: "Kavi", isHost: true, isReady: true },
+                { id: "2", name: "Alex", isReady: false },
+              ],
+              meId: "1",
+              settings: {
+                roomCode: "ABCD5",
+                isPrivate: true,
+                familyMode: false,
+                roundLimit: 8,
+                scoreLimit: 10,
+                handSize: 10,
+                packs: ["Base", "Party"],
+              },
+            }}
+          />
+          <Stack.Screen
+            name="create-game"
+            options={{ title: "Create Game" }}
+            initialParams={{ defaultName: "" }}
+          />
+          <Stack.Screen
+            name="join-game"
+            options={{ title: "Join Game" }}
+            initialParams={{
+              defaultName: "Alex",
+              lastSession: { roomCode: "ABCD5", name: "Alex" },
+            }}
+          />
+        </Stack>
 
-      <StatusBar style="auto" />
+        <StatusBar style="auto" />
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }

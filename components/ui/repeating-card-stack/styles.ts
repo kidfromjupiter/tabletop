@@ -25,6 +25,13 @@ export const styles = StyleSheet.create({
 
     padding: 16,
   },
+  topHighlight: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 20, // 6–24 looks good; tweak per card size
+  },
   title: { color: "white", fontSize: 22, fontWeight: "700", marginBottom: 6 },
   subtitle: { color: "rgba(255,255,255,0.9)" },
 });

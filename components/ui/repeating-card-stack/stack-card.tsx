@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { ImageBackground, Text, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
@@ -33,6 +34,13 @@ export const StackCard = React.memo((props: StackCardProps) => {
         },
       ]}
     >
+      <LinearGradient
+        pointerEvents="none"
+        colors={["rgba(255, 255, 255, 0.15)", "rgba(255,255,255,0)"]}
+        start={{ x: 0.5, y: 0 }} // top-center
+        end={{ x: 0.5, y: 1 }} // fade downward
+        style={styles.topHighlight}
+      />
       <ImageBackground
         style={{ flex: 1, width: "100%" }}
         source={
