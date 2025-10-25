@@ -12,8 +12,10 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 //import { Button, IconButton } from "./ui.buttons";
 import { Button, IconButton } from "@/components/ui/button";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { router } from "expo-router";
 
 /**
@@ -53,6 +55,9 @@ export default function RoundResultsScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const roomCode = useGameStore((state) => state.settings.roomCode || "");
+  const meId = useGameStore((state) => state.me?.id || "");
+  const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const players = useGameStore((state) =>
     state.players.sort((a, b) => {
       const scoreA = a.score || 0;
@@ -218,7 +223,22 @@ export default function RoundResultsScreen({
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Button title="Next Round" onPress={() => router.push("/lobby")} />
+        <Button
+          title="Next Round"
+          onPress={async () => {
+            await supabase.functions.invoke("endpoints", {
+              body: {
+                action: "toggle_ready",
+                payload: {
+                  user_id: meId,
+                  room_code: roomCode,
+                  is_ready: true,
+                },
+              },
+            });
+            router.push("/lobby");
+          }}
+        />
       </View>
     </SafeAreaView>
   );
