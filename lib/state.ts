@@ -260,10 +260,8 @@ export const useGameStore = create<StoreState>()(
         setPlayers: (players) =>
           set((s) => {
             const myId = s.me?.id;
-            console.log(myId);
             const iAmHost = players.some((pl) => pl.isHost && pl.id === myId);
 
-            console.log(iAmHost);
             return { players, isHost: iAmHost };
           }),
         removePlayer: (id) =>

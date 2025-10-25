@@ -43,7 +43,9 @@ export default function RootLayout() {
 
   // lobby stuff
   useEffect(() => {
+    console.log("useEffect lobby sub roundId, roomCode:", roundId, roomCode);
     if (!roomCode) return;
+    console.log("Room code exists, setting up lobby subscriptions");
     (async () => {
       setPlayers([]); // reset on mount
       // Pull current state (join profiles for richer UI)
@@ -207,12 +209,13 @@ export default function RootLayout() {
         }
       )
       .subscribe();
+    console.log("roomcode lobby subbed:", roomCode);
 
     return () => {
       console.log("unsubbed");
       supabaseChannel.unsubscribe();
     };
-  }, [roundId, roomCode]);
+  }, [roundId, roomCode, me]);
 
   // player-view stuff
   useEffect(() => {

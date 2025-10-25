@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -64,17 +63,16 @@ export default function PlayerView() {
   const ty = useSharedValue(0);
   const scale = useSharedValue(1);
   const [updatedSubmissionUserId, setUpdatedSubmissionUserId] = useState("");
-  const bgColor = useSharedValue("rgba(0,0,0,0.7)");
-
   useEffect(() => {
     // scale animation when submissions change
-    scale.value = withTiming(1.5, { duration: 300 }, () => {
+    scale.value = withTiming(1.1, { duration: 300 }, () => {
       scale.value = withSpring(1);
     });
-    ty.value = withTiming(-10, { duration: 300 }, () => {
+    ty.value = withTiming(-4, { duration: 300 }, () => {
       ty.value = withSpring(0);
     });
     console.log("running submission animation");
+    // highlight bg briefly
   }, [updatedSubmissionUserId]);
 
   useEffect(() => {
@@ -153,7 +151,6 @@ export default function PlayerView() {
             prevState.round?.submissions.length &&
           currState.round?.submissions.length > 0
         ) {
-          console.log("Detected new submission");
           const latest =
             currState.round.submissions[currState.round.submissions.length - 1];
           setUpdatedSubmissionUserId(latest.playerId || "");
@@ -251,11 +248,11 @@ export default function PlayerView() {
                 </Text>
               </View> */}
 
-              <View style={hudStyles.pill}>
+              <Animated.View style={[hudStyles.pill]}>
                 <Text style={hudStyles.pillText}>
                   {submissions.length}/{players.length - 1} submitted
                 </Text>
-              </View>
+              </Animated.View>
             </View>
 
             {/* Progress bar under the chips */}
@@ -267,8 +264,9 @@ export default function PlayerView() {
             {/* Row 2: avatars */}
             <ScrollView
               horizontal
+              style={{ overflow: "visible" }}
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={hudStyles.avatars}
+              contentContainerStyle={[hudStyles.avatars]}
             >
               {players.map((p) => (
                 <Animated.View
@@ -294,6 +292,7 @@ export default function PlayerView() {
                     ]}
                   >
                     <View style={hudStyles.avatarFallback}>
+                      {/* <Text>{p.</Text> */}
                       {/* <Text style={hudStyles.avatarFallbackText}>{p.name}</Text> */}
                     </View>
                   </View>
@@ -304,7 +303,6 @@ export default function PlayerView() {
               ))}
             </ScrollView>
           </View>
-          <StatusBar style="light" />
 
           <View style={{ flex: 1, width: "100%" }}>
             {/* Opponent hand (optional) */}
