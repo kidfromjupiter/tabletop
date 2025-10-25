@@ -18,13 +18,9 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RevealSequenceScreen({
-  autoPlay = false,
-  autoDelayMs = 900,
   onFinished,
   onBack,
 }: {
-  autoPlay?: boolean;
-  autoDelayMs?: number;
   onFinished?: (winnerId?: string) => void; // called after winner highlight shown
   onBack?: () => void;
 }) {
@@ -34,37 +30,8 @@ export default function RevealSequenceScreen({
   const [submissionCards, setSubmissionCards] = React.useState<RevealItem[]>(
     []
   );
-
-  const [step, setStep] = React.useState(0); // index of the last revealed item (inclusive)
-  const [done, setDone] = React.useState(false);
-
-  const winner = submissionCards.find((i) => i.isWinner);
   const roundId = useGameStore((state) => state.round?.roundId);
-  const meId = useGameStore((state) => state.me?.id);
   const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // Autoplay reveal
-  React.useEffect(() => {
-    if (!autoPlay) return;
-    if (done) return;
-    if (step >= submissionCards.length - 1) return; // last item already revealed
-    const t = setTimeout(
-      () => setStep((s) => Math.min(s + 1, submissionCards.length - 1)),
-      autoDelayMs
-    );
-    return () => clearTimeout(t);
-  }, [step, autoPlay, autoDelayMs, done, submissionCards.length]);
-
-  // Once all revealed, show a brief winner highlight then finish
-  React.useEffect(() => {
-    if (step >= submissionCards.length - 1 && !done) {
-      const t = setTimeout(() => {
-        setDone(true);
-        onFinished?.(winner?.id);
-      }, 1200);
-      return () => clearTimeout(t);
-    }
-  }, [step, submissionCards.length, done, onFinished, winner?.id]);
 
   React.useEffect(() => {
     (async () => {
@@ -152,11 +119,6 @@ export default function RevealSequenceScreen({
     };
   }, []);
 
-  function revealNext() {
-    if (done) return;
-    setStep((s) => Math.min(s + 1, submissionCards.length - 1));
-  }
-
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
@@ -188,14 +150,14 @@ export default function RevealSequenceScreen({
       <Animated.FlatList
         data={submissionCards}
         keyExtractor={(i) => i.id}
-        contentContainerStyle={{ padding: 12, paddingBottom: 120, gap: 12 }}
+        contentContainerStyle={{ padding: 12, paddingBottom: 120, gap: 8 }}
         itemLayoutAnimation={LinearTransition.springify()}
         renderItem={({ item, index }) => (
           <RevealRow
             key={item.id}
             item={item}
             visible={item.visible || false}
-            isWinner={!!item.isWinner && step >= submissionCards.length - 1}
+            isWinner={false}
             isDark={isDark}
           />
         )}
@@ -203,14 +165,10 @@ export default function RevealSequenceScreen({
 
       {/* Footer controls */}
       <View style={styles.footer}>
-        {!done && step < submissionCards.length - 1 ? (
-          <Button title="Reveal Next" onPress={() => {}} />
-        ) : (
-          <Button
-            title="Continue"
-            onPress={() => router.push("/round-results")}
-          />
-        )}
+        <Button
+          title="Continue"
+          onPress={() => router.push("/round-results")}
+        />
       </View>
     </SafeAreaView>
   );

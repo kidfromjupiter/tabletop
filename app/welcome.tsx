@@ -5,14 +5,7 @@ import { useGameStore } from "@/lib/state";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as React from "react";
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from "react-native";
+import { Image, StyleSheet, Text, useColorScheme, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   FadeIn,
@@ -210,7 +203,7 @@ export default function WelcomeScreen({
               gap: 16,
             }}
           >
-            <Pressable
+            {/* <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/player-view")}
             >
@@ -234,7 +227,7 @@ export default function WelcomeScreen({
               onPress={() => router.push("/reveal-sequence")}
             >
               <Text style={styles.link}>Reveal Sequence</Text>
-            </Pressable>
+            </Pressable> */}
           </View>
 
           <View style={{ flex: 1 }} />
