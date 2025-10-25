@@ -204,7 +204,7 @@ export default function RevealSequenceScreen({
       {/* Footer controls */}
       <View style={styles.footer}>
         {!done && step < submissionCards.length - 1 ? (
-          <Button title="Reveal Next" onPress={revealNext} />
+          <Button title="Reveal Next" onPress={() => {}} />
         ) : (
           <Button
             title="Continue"
