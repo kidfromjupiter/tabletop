@@ -42,6 +42,10 @@ export default function RootLayout() {
   const router = useRouter();
 
   // lobby stuff
+
+  // TODO: move away from supabase postgres changes to supabase realtime functions
+  // Right now we're using a random UUID in place of roundId to avoid subscription issues
+
   useEffect(() => {
     console.log("useEffect lobby sub roundId, roomCode:", roundId, roomCode);
     if (!roomCode) return;
@@ -81,7 +85,7 @@ export default function RootLayout() {
           event: "*",
           schema: "public",
           table: "round_submissions",
-          filter: `round_id=eq.${roundId}`,
+          filter: `round_id=eq.${roundId || global.crypto.randomUUID()}`,
         },
         async (payload: RealtimePostgresChangesPayload<any>) => {
           if (payload.eventType === "INSERT") {
@@ -208,18 +212,20 @@ export default function RootLayout() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status, error) => {
+        console.log("lobby supabase status:", status, error);
+      });
     console.log("roomcode lobby subbed:", roomCode);
 
     return () => {
       console.log("unsubbed");
       supabaseChannel.unsubscribe();
+      supabase.removeChannel(supabaseChannel);
     };
   }, [roundId, roomCode, me]);
-
   // player-view stuff
   useEffect(() => {
-    if (!me) return;
+    if (!me || !roundId || !roomCode) return;
     (async () => {
       const { data: roomState } = await supabase.functions.invoke("endpoints", {
         body: {

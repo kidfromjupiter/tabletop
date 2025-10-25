@@ -98,7 +98,7 @@ export default function PlayerView() {
       clearTimeout(timer);
       cancelAnimation(rot);
     };
-  }, [rot]);
+  }, [rot, submitted]);
 
   // one wobble cycle
   const wobble = () => {
