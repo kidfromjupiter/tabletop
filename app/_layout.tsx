@@ -9,7 +9,7 @@ import "react-native-reanimated";
 import { Item } from "@/components/ui/repeating-card-stack/types";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Player, useGameStore } from "@/lib/state";
+import { Player, Submission, useGameStore } from "@/lib/state";
 import {
   RealtimePostgresChangesPayload,
   SupabaseClient,
@@ -248,11 +248,21 @@ export default function RootLayout() {
           backside: true,
         };
       });
+      const submissionsForStore: Submission[] =
+        submissions?.map((submission: any) => ({
+          id: submission.id,
+          texts: submission.round_submission_items.map(
+            (rsi: any) => rsi.answer_cards.text
+          ),
+          revealed: false,
+          playerId: submission.profiles.id,
+        })) || [];
       setRoundData(
         roomState.round.id || "",
         roomState.round.prompt.text,
         roomState.round.pick_count,
-        roomState.round.judge_user_id
+        roomState.round.judge_user_id,
+        submissionsForStore
       );
       setHand(roomState.my_hand);
       setCards([

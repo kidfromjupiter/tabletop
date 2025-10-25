@@ -106,7 +106,8 @@ export type StoreState = {
     roundId: string,
     prompt: string,
     pickCount: number,
-    judgeId: string
+    judgeId: string,
+    submissions?: Submission[]
   ) => void;
   submitForPlayer: (submission: Submission) => void;
   revealSubmission: (submissionId: string) => void;
@@ -284,14 +285,14 @@ export const useGameStore = create<StoreState>()(
         toPhase: (p) => set({ phase: p }),
         toLobby: () => set({ phase: "lobby" }),
 
-        startRound: (roundId, prompt, pickCount, judgeId) =>
+        startRound: (roundId, prompt, pickCount, judgeId, submissions) =>
           set((s) => ({
             phase: "judge",
             round: {
               roundId,
               prompt,
               pickCount,
-              submissions: [],
+              submissions: submissions || [],
               timeLeftSec: undefined,
               timeTotalSec: undefined,
               judgeId,

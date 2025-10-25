@@ -20,14 +20,21 @@ import ConfirmModal from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
 import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
-import { useGameStore } from "@/lib/state";
+import { StoreState, useGameStore } from "@/lib/state";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { router, useNavigation } from "expo-router";
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 
 const { width } = Dimensions.get("screen");
 const CARD_WIDTH = width * 0.45;
-const OPP_CARD_WIDTH = width * 0.25;
-const OPP_GAP = 3;
 const CARD_GAP = 5;
 
 export default function PlayerView() {
@@ -50,8 +57,76 @@ export default function PlayerView() {
   const players = useGameStore((state) => state.players || []);
   const submissions = useGameStore((state) => state.round?.submissions || []);
   const [roundNumber, setRoundNumber] = useState(1);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(
+    submissions.some((s) => s.playerId === me?.id)
+  );
   const judgeId = useGameStore((state) => state.round?.judgeId);
+  const ty = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const [updatedSubmissionUserId, setUpdatedSubmissionUserId] = useState("");
+  const bgColor = useSharedValue("rgba(0,0,0,0.7)");
+
+  useEffect(() => {
+    // scale animation when submissions change
+    scale.value = withTiming(1.5, { duration: 300 }, () => {
+      scale.value = withSpring(1);
+    });
+    ty.value = withTiming(-10, { duration: 300 }, () => {
+      ty.value = withSpring(0);
+    });
+    console.log("running submission animation");
+  }, [updatedSubmissionUserId]);
+
+  useEffect(() => {
+    wobble();
+  }, [submitted]);
+
+  const rot = useSharedValue(0);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loop = () => {
+      if (!isMounted || !submitted) return;
+      // kick off wobble now
+      wobble();
+      // schedule next wobble in ~2 seconds using JS
+      timer = setTimeout(loop, 2000);
+    };
+
+    let timer = setTimeout(loop, 2000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      cancelAnimation(rot);
+    };
+  }, [rot]);
+
+  // one wobble cycle
+  const wobble = () => {
+    // sequence explanation:
+    //  - tilt right
+    //  - tilt left
+    //  - smaller right
+    //  - settle at 0 with spring
+    rot.value = withSequence(
+      withTiming(3, {
+        duration: 100,
+      }),
+      withRepeat(
+        withTiming(-3, {
+          duration: 100,
+        }),
+        3,
+        true
+      ),
+      withSpring(0, {
+        damping: 10,
+        stiffness: 200,
+        mass: 0.4,
+      })
+    );
+  };
 
   useEffect(() => {
     // Intercept only "back" navigations
@@ -70,7 +145,25 @@ export default function PlayerView() {
         .eq("room_code", roomCode);
       setRoundNumber(count || 1);
     })();
-    return unsub;
+    const zustandListener = useGameStore.subscribe(
+      (currState: StoreState, prevState: StoreState) => {
+        if (!prevState.round || !currState.round) return;
+        if (
+          currState.round?.submissions.length >
+            prevState.round?.submissions.length &&
+          currState.round?.submissions.length > 0
+        ) {
+          console.log("Detected new submission");
+          const latest =
+            currState.round.submissions[currState.round.submissions.length - 1];
+          setUpdatedSubmissionUserId(latest.playerId || "");
+        }
+      }
+    );
+    return () => {
+      unsub();
+      zustandListener();
+    };
   }, []);
 
   const removeById = async (id: string) => {
@@ -104,7 +197,17 @@ export default function PlayerView() {
       return false;
     }
   };
-
+  const animatedAvatarStyle = useAnimatedStyle(() => {
+    return {
+      transformOrigin: "bottom",
+      transform: [{ scale: scale.value }, { translateY: ty.value }],
+    };
+  });
+  const wobbleAnimStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${rot.value}deg` }],
+    };
+  });
   return (
     <GestureHandlerRootView>
       <SafeAreaView style={[styles.container]}>
@@ -127,19 +230,21 @@ export default function PlayerView() {
                 <Text style={hudStyles.pillText}>Round {roundNumber}</Text>
               </View>
 
-              <Button
-                title={submitted ? "Go to Reveal" : "Pick & Play Your Card"}
-                onPress={() => {
-                  if (submitted) {
-                    // Navigate to results
-                    router.replace("/reveal-sequence");
-                  }
-                }}
-                fullWidth={false}
-                disabled={!submitted}
-                size="sm"
-                variant={submitted ? "primary" : "secondary"}
-              />
+              <Animated.View style={wobbleAnimStyle}>
+                <Button
+                  title={submitted ? "Go to Reveal" : "Pick & Play Your Card"}
+                  onPress={() => {
+                    if (submitted) {
+                      // Navigate to results
+                      router.replace("/reveal-sequence");
+                    }
+                  }}
+                  fullWidth={false}
+                  disabled={!submitted}
+                  size="sm"
+                  variant={submitted ? "primary" : "secondary"}
+                />
+              </Animated.View>
               {/* <View style={[hudStyles.pill, { paddingHorizontal: 14 }]}>
                 <Text style={hudStyles.pillText}>
                   {submitted ? "You're the Card Czar 👑" : "Pick & play your card"}
@@ -166,7 +271,15 @@ export default function PlayerView() {
               contentContainerStyle={hudStyles.avatars}
             >
               {players.map((p) => (
-                <View key={p.id} style={hudStyles.avatarWrap}>
+                <Animated.View
+                  key={p.id}
+                  style={[
+                    hudStyles.avatarWrap,
+                    p.id === updatedSubmissionUserId
+                      ? animatedAvatarStyle
+                      : null,
+                  ]}
+                >
                   <View
                     style={[
                       hudStyles.avatarRing,
@@ -187,7 +300,7 @@ export default function PlayerView() {
                   <Text numberOfLines={1} style={hudStyles.avatarName}>
                     {p.name}
                   </Text>
-                </View>
+                </Animated.View>
               ))}
             </ScrollView>
           </View>
