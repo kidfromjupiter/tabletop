@@ -1,11 +1,11 @@
 import SubmissionCard from "@/components/pages/judges-view/submissions-card";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import ConfirmModal from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
-import { Ionicons } from "@expo/vector-icons";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import * as React from "react";
 import { useEffect } from "react";
 import {
@@ -74,13 +74,34 @@ export default function JudgeViewScreen({
 
   const revealedCount = submissions.filter((s) => s.revealed).length;
   const submittedCount = submissions.length;
+  const [confirmVisible, setConfirmVisible] = React.useState(false);
+  const navigation = useNavigation();
   const meId = useGameStore((state) => state.me?.id);
+  const roomCode = useGameStore((state) => state.settings.roomCode);
+  const setMe = useGameStore((state) => state.setMe);
+  const setSettings = useGameStore((state) => state.updateSettings);
 
   function handleSelect(id: string) {
     setSelectedId((prev) => (prev === id ? null : id));
     onPick?.(id);
   }
 
+  const leaveRoom = async () => {
+    const { error } = await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "leave_room",
+        payload: {
+          user_id: meId,
+          room_code: roomCode,
+        },
+      },
+    });
+    if (!error) {
+      setMe(null);
+      setSettings({ roomCode: "" });
+      router.replace("/welcome");
+    }
+  };
   const headerFg = isDark ? "#fff" : "#0B0B0B";
   const revealCard = async (submission_id: string) => {
     const { data, error } = await supabase.functions.invoke("endpoints", {
@@ -118,6 +139,16 @@ export default function JudgeViewScreen({
     router.replace("/round-results");
   };
   useEffect(() => {
+    // Intercept only "back" navigations
+    const unsub = navigation.addListener("beforeRemove", (e: any) => {
+      console.log("ran");
+      if (e.data.action.type !== "GO_BACK") return; // Allow non-back navigations
+      e.preventDefault(); // stop the default behavior
+      setConfirmVisible(true);
+    });
+    return unsub;
+  }, []);
+  useEffect(() => {
     (async () => {
       const { data: roomState } = await supabase.functions.invoke("endpoints", {
         body: {
@@ -147,19 +178,21 @@ export default function JudgeViewScreen({
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
       {/* Header */}
-      <View style={styles.header}>
-        <IconButton variant="ghost" onPress={() => router.back()}>
+      <View style={[styles.header, { justifyContent: "center" }]}>
+        {/* <IconButton variant="ghost" onPress={() => router.back()}>
           <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
-        </IconButton>
-        <Text style={[styles.title, { color: headerFg }]}>Judge</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        </IconButton> */}
+        <Text style={[styles.title, { color: headerFg, textAlign: "center" }]}>
+          Judge
+        </Text>
+        {/* <View style={{ flexDirection: "row", gap: 8 }}>
           <IconButton variant="ghost" onPress={onShuffle}>
             <Ionicons name="refresh-sharp" size={24} color="currentColor" />
           </IconButton>
           <IconButton variant="ghost" onPress={onSkip}>
             <Ionicons name="play-forward" size={24} color="currentColor" />
           </IconButton>
-        </View>
+        </View> */}
       </View>
 
       {/* Prompt (Black Card) */}
@@ -242,6 +275,12 @@ export default function JudgeViewScreen({
           disabled={!selectedId}
         />
       </View>
+
+      <ConfirmModal
+        visible={confirmVisible}
+        onCancel={() => setConfirmVisible(false)}
+        onConfirm={leaveRoom}
+      />
     </SafeAreaView>
   );
 }
