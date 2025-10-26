@@ -90,7 +90,7 @@ export function PaperModal({
         if (finished) runOnJS(setMounted)(false);
       });
       if (variant === "bottom") {
-        translateY.value = withTiming(20); // tiny nudge down for nicer fade
+        translateY.value = withTiming(40); // tiny nudge down for nicer fade
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,11 +168,11 @@ export function PaperModal({
     <Modal
       visible={mounted}
       onRequestClose={onClose}
-      animationType="none"
+      animationType="fade"
       transparent
       statusBarTranslucent
     >
-      <View style={styles.fill} pointerEvents="box-none">
+      <View style={styles.fill}>
         {/* Backdrop */}
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           {/* backdrop press */}
@@ -236,10 +236,10 @@ const styles = StyleSheet.create({
   bottom: {
     justifyContent: "flex-end",
     paddingHorizontal: 12,
-    paddingBottom: Platform.select({ ios: 32, android: 24 }),
+    //paddingBottom: Platform.select({ ios: 32, android: 24 }),
   },
   card: {
-    maxWidth: 640,
+    //maxWidth: 640,
     width: "100%",
     borderRadius: 20,
     // "Paper" look
@@ -262,6 +262,8 @@ const styles = StyleSheet.create({
   },
   cardInner: {
     // Content wrapper so padding can be overridden via contentStyle if needed
+
+    paddingBottom: Platform.select({ ios: 32, android: 24 }),
   },
   handleWrap: {
     alignItems: "center",
@@ -272,6 +274,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 999,
-    backgroundColor: "rgba(126, 126, 126, 0.15)",
+    backgroundColor: "rgba(160, 160, 160, 0.15)",
   },
 });
