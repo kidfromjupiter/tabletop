@@ -268,7 +268,7 @@ function themedColors(
   variant: ButtonVariant,
   disabled?: boolean
 ) {
-  const accent600 = "#6A5AE0";
+  const accent600 = "rgba(106, 90, 224, 1)";
   const accent500 = "#8B7BFF";
 
   // Reds for danger

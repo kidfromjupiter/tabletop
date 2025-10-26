@@ -8,8 +8,15 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { router } from "expo-router";
 import * as React from "react";
 import { useEffect } from "react";
-import { FlatList, StyleSheet, Text, useColorScheme, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  useColorScheme,
+  View,
+} from "react-native";
+import Animated, { FadeIn, FadeInDown, FadeOut } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -59,6 +66,8 @@ export default function JudgeViewScreen({
   const submitForPlayer = useGameStore((state) => state.submitForPlayer);
   const submissions = useGameStore((state) => state.round?.submissions || []);
   const roundId = useGameStore((state) => state.round?.roundId);
+  const [clickedConfirmNoWinner, setClickedConfirmNoWinner] =
+    React.useState(false);
   const [prompt, setPrompt] = React.useState("Loading prompt...");
 
   const [expectedSubmissions, setExpectedSubmissions] = React.useState(0);
@@ -87,7 +96,15 @@ export default function JudgeViewScreen({
   };
 
   const confirmWinner = async () => {
-    if (!selectedId) return;
+    if (!selectedId) {
+      setClickedConfirmNoWinner(true);
+      ToastAndroid.showWithGravity(
+        "Please select a winner before confirming.",
+        ToastAndroid.SHORT,
+        ToastAndroid.CENTER
+      );
+      return;
+    }
     const { data, error } = await supabase.functions.invoke("endpoints", {
       body: {
         action: "judge_pick",
@@ -209,6 +226,16 @@ export default function JudgeViewScreen({
 
       {/* Footer */}
       <View style={styles.footer}>
+        {!selectedId && (
+          <Animated.Text
+            style={styles.footerText}
+            entering={FadeIn}
+            exiting={FadeOut}
+          >
+            Tap on a revealed card to select a winner
+          </Animated.Text>
+        )}
+
         <Button
           title="Confirm Winner"
           onPress={confirmWinner}
@@ -227,6 +254,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+
+  footerText: {
+    textAlign: "center",
+    fontSize: 12,
+    opacity: 0.6,
+    marginBottom: 10,
+    color: "#888",
   },
   title: { fontSize: 20, fontWeight: "800" },
   promptCard: {
