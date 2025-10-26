@@ -41,10 +41,14 @@ export default function PlayerView() {
   const navigation = useNavigation();
 
   // Zustand store hooks
-  const cards = useGameStore((state) => state.cards);
+  const cards = useGameStore((state) => state.submittedCardStack);
   const hand = useGameStore((state) => state.hand);
   const addCard = useGameStore((state) => state.addCard);
   const removeCardFromHand = useGameStore((state) => state.removeCardFromHand);
+  const addCardToHand = useGameStore((state) => state.addCardToHand);
+  const removeCardFromSubmittedStack = useGameStore(
+    (state) => state.removeCardFromSubmittedStack
+  );
   const roomCode = useGameStore((state) => state.settings.roomCode);
 
   // nav guard + modal state
@@ -164,6 +168,9 @@ export default function PlayerView() {
   }, []);
 
   const removeById = async (id: string) => {
+    const item = hand.find((item) => item.id === id);
+    if (item) addCard(item);
+    removeCardFromHand(id);
     const { data, error, response } = await supabase.functions.invoke(
       "endpoints",
       {
@@ -185,12 +192,12 @@ export default function PlayerView() {
       );
     }
     if (!error) {
-      const item = hand.find((item) => item.id === id);
-      if (item) addCard(item);
-      removeCardFromHand(id);
       setSubmitted(true);
       return true;
     } else {
+      if (item) addCardToHand(item); // re-add card on error
+      if (item) removeCardFromSubmittedStack(id);
+
       return false;
     }
   };

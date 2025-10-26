@@ -66,7 +66,7 @@ export type StoreState = {
   error?: string | null;
 
   // cards and hand
-  cards: Item[];
+  submittedCardStack: Item[];
   hand: Item[];
 
   // ===== Actions =====
@@ -122,6 +122,8 @@ export type StoreState = {
   setHand: (hand: Item[]) => void;
   addCard: (card: Item) => void;
   removeCardFromHand: (id: string) => void;
+  addCardToHand: (card: Item) => void;
+  removeCardFromSubmittedStack: (id: string) => void;
 };
 
 const initialSettings: GameSettings = {
@@ -167,6 +169,8 @@ const initialState: Omit<
   | "setHand"
   | "addCard"
   | "removeCardFromHand"
+  | "addCardToHand"
+  | "removeCardFromSubmittedStack"
 > = {
   me: null,
   isHost: false,
@@ -179,7 +183,7 @@ const initialState: Omit<
   round: null,
   busy: false,
   error: null,
-  cards: [],
+  submittedCardStack: [],
   hand: [],
 };
 
@@ -368,12 +372,23 @@ export const useGameStore = create<StoreState>()(
               : s.round,
           })),
 
-        setCards: (cards) => set({ cards }),
+        setCards: (cards) => set({ submittedCardStack: cards }),
         setHand: (hand) => set({ hand }),
-        addCard: (card) => set((state) => ({ cards: [...state.cards, card] })),
+        addCard: (card) =>
+          set((state) => ({
+            submittedCardStack: [...state.submittedCardStack, card],
+          })),
         removeCardFromHand: (id) =>
           set((state) => ({
             hand: state.hand.filter((item) => item.id !== id),
+          })),
+        addCardToHand: (card) =>
+          set((state) => ({ hand: [...state.hand, card] })),
+        removeCardFromSubmittedStack: (id) =>
+          set((state) => ({
+            submittedCardStack: state.submittedCardStack.filter(
+              (item) => item.id !== id
+            ),
           })),
       }),
       {
