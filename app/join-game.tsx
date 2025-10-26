@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   useColorScheme,
   View,
 } from "react-native";
@@ -99,15 +100,18 @@ export default function JoinGameScreen({
       setError("Please enter a display name.");
       return;
     }
-    const { data, error } = await supabase.functions.invoke("endpoints", {
-      body: {
-        action: "join_room",
-        payload: {
-          display_name: trimmed,
-          code: c.toUpperCase(),
+    const { data, error, response } = await supabase.functions.invoke(
+      "endpoints",
+      {
+        body: {
+          action: "join_room",
+          payload: {
+            display_name: trimmed,
+            code: c.toUpperCase(),
+          },
         },
-      },
-    });
+      }
+    );
     console.log("Join response:", data, error);
     setMe({ id: data?.user_id || "", name: trimmed });
     if (!error) {
@@ -116,6 +120,14 @@ export default function JoinGameScreen({
       router.push("/lobby");
     } else {
       console.log("Join error:", error);
+      console.log("Full response:", response);
+      if (response?.status === 404) {
+        ToastAndroid.showWithGravity(
+          "Room not found or has already ended",
+          ToastAndroid.SHORT,
+          ToastAndroid.CENTER
+        );
+      }
     }
   }
 

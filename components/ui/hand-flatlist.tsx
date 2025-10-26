@@ -64,7 +64,7 @@ export default function SelfHand({
               overflow: "visible",
             }}
             rotation={35}
-            yRange={0}
+            yRange={20}
             scrollX={scrollOffset}
             index={index}
             id={item.id}

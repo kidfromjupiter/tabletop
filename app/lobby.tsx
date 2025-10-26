@@ -2,11 +2,13 @@ import PlayerCard from "@/components/pages/lobby/player-card";
 import RoomCard from "@/components/pages/lobby/room-card";
 import Rules from "@/components/pages/lobby/rules";
 import { Button, IconButton } from "@/components/ui/button";
+import ConfirmModal from "@/components/ui/modal";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { Player, useGameStore } from "@/lib/state";
 import { Ionicons } from "@expo/vector-icons";
 import { createClient } from "@supabase/supabase-js";
-import { useRouter } from "expo-router";
+import * as Clipboard from "expo-clipboard";
+import { useNavigation, useRouter } from "expo-router";
 import * as React from "react";
 import { useEffect } from "react";
 import {
@@ -45,35 +47,36 @@ export type LobbySettings = {
 };
 
 export default function LobbyScreen({
-  onStart,
   onToggleReady,
   onKick,
   onPromote,
   onShuffleJudges,
-  onCopyInvite,
   onLeave,
   onToggleFamilyMode,
 }: {
-  onStart?: () => void;
   onToggleReady?: (playerId: string) => void;
   onKick?: (playerId: string) => void;
   onPromote?: (playerId: string) => void; // promote to host
   onShuffleJudges?: () => void;
-  onCopyInvite?: () => void;
   onLeave?: () => void;
   onToggleFamilyMode?: (value: boolean) => void;
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const [confirmVisible, setConfirmVisible] = React.useState(false);
 
   // zustand
   const players = useGameStore((state) => state.players); // --- IGNORE ---
   const meId = useGameStore((state) => state.me?.id || ""); // Ensure meId is always a string
   const isHost = useGameStore((state) => state.isHost); // --- IGNORE ---
   const settings = useGameStore((state) => state.settings); // --- IGNORE ---
+  const setMe = useGameStore((state) => state.setMe);
+  const setSettings = useGameStore((state) => state.updateSettings);
 
   const router = useRouter();
+
+  const navigation = useNavigation();
 
   const allReady =
     players.length > 1 && players.every((p) => (p.isHost ? true : !!p.isReady));
@@ -102,6 +105,32 @@ export default function LobbyScreen({
   }));
 
   const headerFg = isDark ? "#fff" : "#0B0B0B";
+
+  const leaveRoom = async () => {
+    const { error } = await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "leave_room",
+        payload: {
+          user_id: meId,
+          room_code: settings.roomCode,
+        },
+      },
+    });
+    if (!error) {
+      setMe(null);
+      setSettings({ roomCode: "" });
+      router.replace("/welcome");
+    }
+  };
+
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove", (e: any) => {
+      if (e.data.action.type !== "GO_BACK") return; // Allow non-back navigations
+      e.preventDefault(); // stop the default behavior
+      setConfirmVisible(true);
+    });
+    return unsub;
+  }, []);
   if (!meId) {
     return null;
   }
@@ -144,6 +173,10 @@ export default function LobbyScreen({
     });
   };
 
+  const copyToClipboard = async () => {
+    // new API is async-friendly
+    await Clipboard.setStringAsync(settings.roomCode);
+  };
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
@@ -173,7 +206,7 @@ export default function LobbyScreen({
           isDark={isDark}
           pulseStyle={pulseStyle}
           headerFg={headerFg}
-          onCopyInvite={onCopyInvite}
+          onCopyInvite={copyToClipboard}
         />
 
         {/* Players */}
@@ -245,6 +278,12 @@ export default function LobbyScreen({
           )}
         </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={confirmVisible}
+        onCancel={() => setConfirmVisible(false)}
+        onConfirm={leaveRoom}
+      />
     </SafeAreaView>
   );
 }

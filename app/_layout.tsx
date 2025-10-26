@@ -88,6 +88,7 @@ export default function RootLayout() {
           filter: `round_id=eq.${roundId || global.crypto.randomUUID()}`,
         },
         async (payload: RealtimePostgresChangesPayload<any>) => {
+          if (payload.table !== "round_submissions") return; // sometimes gets called for other tables?
           if (payload.eventType === "INSERT") {
             const submission_id = payload.new.id;
             const { data } = await supabase
@@ -135,6 +136,7 @@ export default function RootLayout() {
           filter: `room_code=eq.${roomCode}`,
         },
         async (payload: RealtimePostgresChangesPayload<any>) => {
+          if (payload.table !== "rounds") return; // sometimes gets called for other tables?
           if (payload.eventType === "INSERT") {
             // created a new round, navigate to game view
             const roundData = payload.new;
@@ -146,6 +148,8 @@ export default function RootLayout() {
               roundData.judge_user_id
             );
             router.replace("/game-view");
+            console.log("New round created, navigating to game view");
+            console.log("payload:", payload);
           }
           if (payload.eventType === "UPDATE") {
             if (payload.new.winning_submission_id) {
@@ -178,6 +182,7 @@ export default function RootLayout() {
           filter: `room_code=eq.${roomCode}`,
         },
         async (payload: RealtimePostgresChangesPayload<any>) => {
+          if (payload.table !== "room_players") return; // sometimes gets called for other tables?
           console.log("Lobby player change payload:", payload);
           const { data, error } = await supabase
             .from("profiles")

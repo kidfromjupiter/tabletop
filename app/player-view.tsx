@@ -20,10 +20,13 @@ import { Progress } from "@/components/ui/progress";
 import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { StoreState, useGameStore } from "@/lib/state";
+import { FontAwesome6 } from "@expo/vector-icons";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { router, useNavigation } from "expo-router";
 import Animated, {
   cancelAnimation,
+  FadeIn,
+  FadeOut,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -234,32 +237,37 @@ export default function PlayerView() {
                 <Text style={hudStyles.pillText}>Round {roundNumber}</Text>
               </View>
 
-              <Animated.View style={wobbleAnimStyle}>
-                <Button
-                  title={submitted ? "Go to Reveal" : "Pick & Play Your Card"}
-                  onPress={() => {
-                    if (submitted) {
-                      // Navigate to results
-                      router.replace("/reveal-sequence");
-                    }
-                  }}
-                  fullWidth={false}
-                  disabled={!submitted}
-                  size="sm"
-                  variant={submitted ? "primary" : "secondary"}
-                />
-              </Animated.View>
-              {/* <View style={[hudStyles.pill, { paddingHorizontal: 14 }]}>
-                <Text style={hudStyles.pillText}>
-                  {submitted ? "You're the Card Czar 👑" : "Pick & play your card"}
-                </Text>
-              </View> */}
-
-              <Animated.View style={[hudStyles.pill]}>
-                <Text style={hudStyles.pillText}>
-                  {submissions.length}/{players.length - 1} submitted
-                </Text>
-              </Animated.View>
+              {submitted ? (
+                <Animated.View
+                  style={wobbleAnimStyle}
+                  entering={FadeIn}
+                  exiting={FadeOut}
+                >
+                  <Button
+                    title={"Go to Reveal"}
+                    onPress={() => {
+                      if (submitted) {
+                        // Navigate to results
+                        router.replace("/reveal-sequence");
+                      }
+                    }}
+                    fullWidth={false}
+                    disabled={!submitted}
+                    size="sm"
+                    variant={submitted ? "primary" : "secondary"}
+                  />
+                </Animated.View>
+              ) : (
+                <Animated.View
+                  style={[hudStyles.pill]}
+                  entering={FadeIn}
+                  exiting={FadeOut}
+                >
+                  <Text style={hudStyles.pillText}>
+                    {submissions.length}/{players.length - 1} submitted
+                  </Text>
+                </Animated.View>
+              )}
             </View>
 
             {/* Progress bar under the chips */}
@@ -295,10 +303,15 @@ export default function PlayerView() {
                         : null,
                       // p.submitted ? hudStyles.ringSubmitted : hudStyles.ringPending,
                       // p.isCzar ? hudStyles.ringCzar : null,
-                      p.id === judgeId ? hudStyles.ringCzar : null,
+                      //p.id === judgeId ? hudStyles.ringCzar : null,
                     ]}
                   >
                     <View style={hudStyles.avatarFallback}>
+                      {p.id === judgeId ? (
+                        <FontAwesome6 name="crown" size={16} color="white" />
+                      ) : (
+                        <Text>🙂</Text>
+                      )}
                       {/* <Text>{p.</Text> */}
                       {/* <Text style={hudStyles.avatarFallbackText}>{p.name}</Text> */}
                     </View>
@@ -328,12 +341,14 @@ export default function PlayerView() {
               alignItems: "center",
             }}
           >
-            <SelfHand
-              gap={CARD_GAP}
-              hand={hand}
-              removeById={removeById} // Directly pass the function
-              card_width={CARD_WIDTH}
-            />
+            <Animated.View>
+              <SelfHand
+                gap={CARD_GAP}
+                hand={hand}
+                removeById={removeById} // Directly pass the function
+                card_width={CARD_WIDTH}
+              />
+            </Animated.View>
           </View>
 
           <ConfirmModal

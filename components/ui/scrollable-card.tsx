@@ -94,7 +94,7 @@ export function ScrollableCard({
           index + displayedRangeFromCenter,
         ],
         [yRange, 0, yRange],
-        Extrapolation.CLAMP
+        Extrapolation.EXTEND
       );
       rot = interpolate(
         scrollX.value / totalWidth,
@@ -103,7 +103,8 @@ export function ScrollableCard({
           index,
           index + displayedRangeFromCenter,
         ],
-        [rotation, 0, -rotation]
+        [rotation, 0, -rotation],
+        Extrapolation.EXTEND
       );
     } else {
       initialY.value = interpolate(
@@ -114,7 +115,7 @@ export function ScrollableCard({
           index + displayedRangeFromCenter,
         ],
         [-yRange, 0, -yRange],
-        Extrapolation.CLAMP
+        Extrapolation.EXTEND
       );
       rot = interpolate(
         scrollX.value / totalWidth,
@@ -124,7 +125,7 @@ export function ScrollableCard({
           index + displayedRangeFromCenter,
         ],
         [-rotation, 0, rotation],
-        Extrapolation.CLAMP
+        Extrapolation.EXTEND
       );
     }
     return {

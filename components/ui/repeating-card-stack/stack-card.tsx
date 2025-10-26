@@ -49,7 +49,7 @@ export const StackCard = React.memo((props: StackCardProps) => {
             : null
         }
         imageStyle={{
-          opacity: 0.5,
+          opacity: 1,
         }}
       >
         <GestureDetector gesture={pan}>

@@ -96,7 +96,7 @@ export default function RoundResultsScreen({
     >
       {/* Header */}
       <View style={styles.header}>
-        <IconButton variant="ghost" onPress={onBackToLobby}>
+        <IconButton variant="ghost" onPress={() => router.back()}>
           <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
         </IconButton>
         <Text style={[styles.title, { color: isDark ? "#fff" : "#111" }]}>

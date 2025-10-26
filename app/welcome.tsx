@@ -63,7 +63,9 @@ export default function WelcomeScreen({
     }, [bob])
   );
   React.useEffect(() => {
+    console.log(`Running this with ${room_code}, ${me_id}`);
     if (room_code && me_id) {
+      console.log(`calling backend this with ${room_code}, ${me_id}`);
       (async () => {
         const { data: roomState } = await supabase.functions.invoke(
           "endpoints",
