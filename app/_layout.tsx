@@ -38,7 +38,8 @@ export default function RootLayout() {
   const setPlayers = useGameStore((state) => state.setPlayers); // --- IGNORE ---
   const pickWinner = useGameStore((state) => state.pickWinner); // --- IGNORE ---
   const submitForPlayer = useGameStore((state) => state.submitForPlayer); // --- IGNORE ---
-  const updateSettings = useGameStore((state) => state.updateSettings); // --- IGNORE ---
+  //const updateSettings = useGameStore((state) => state.updateSettings); // --- IGNORE ---
+  const setPacks = useGameStore((state) => state.setPacks); // --- IGNORE ---
 
   //const navigation = useNavigation();
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function RootLayout() {
           // @ts-ignore
           .in("id", data[0].rooms.packs);
         if (!packsError && packsData) {
-          updateSettings({ packs: packsData });
+          setPacks(packsData);
         }
       }
     })();
@@ -308,7 +309,7 @@ export default function RootLayout() {
         roomState.round.judge_user_id,
         submissionsForStore
       );
-      updateSettings({ packs: roomState.room.packs }); // --- IGNORE ---
+      setPacks(roomState.room.packs);
       setHand(roomState.my_hand);
       setCards([
         {

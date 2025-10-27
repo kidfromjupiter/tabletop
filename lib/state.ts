@@ -139,7 +139,7 @@ const initialSettings: GameSettings = {
   roundLimit: 8,
   scoreLimit: 10,
   handSize: 10,
-  packs: [{ id: "base", name: "Base", is_nsfw: false }],
+  packs: [],
 };
 const initialState: Omit<
   StoreState,
