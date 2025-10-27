@@ -175,8 +175,7 @@ export default function RootLayout() {
               );
             }
 
-            //TODO: add handler for skipping the prompt
-            if (payload.new.id != payload.old.id) {
+            if (payload.new.prompt_id != payload.old.prompt_id) {
               // prompt was skipped
               console.log("Prompt was skipped, clearing cards");
               console.log("new payload:", payload.new);
