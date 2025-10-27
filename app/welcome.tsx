@@ -371,13 +371,3 @@ const styles = StyleSheet.create({
     color: "#888",
   },
 });
-
-/**
- * Usage example:
- * <WelcomeScreen
- *   onCreateGame={() => navigation.navigate('CreateGame')}
- *   onJoinGame={() => navigation.navigate('JoinGame')}
- *   onPassAndPlay={() => navigation.navigate('PassPlay')}
- *   onHowToPlay={() => navigation.navigate('HowToPlay')}
- * />
- */

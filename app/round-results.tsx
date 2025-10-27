@@ -1,7 +1,6 @@
 import * as React from "react";
 import { FlatList, StyleSheet, Text, useColorScheme, View } from "react-native";
 import Animated, {
-  FadeIn,
   FadeInDown,
   interpolate,
   useAnimatedStyle,
@@ -11,10 +10,12 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 //import { Button, IconButton } from "./ui.buttons";
-import { Button, IconButton } from "@/components/ui/button";
-import { useGameStore } from "@/lib/state";
+import PromptCard from "@/components/pages/round-results/prompt-card";
+import RoundResultsHeader from "@/components/pages/round-results/round-results-header";
+import WinnerCard from "@/components/pages/round-results/winner-card";
+import { Button } from "@/components/ui/button";
+import { useRoundResults } from "@/hooks/useRoundResults";
 import supabase from "@/lib/supabase";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 /**
@@ -54,24 +55,8 @@ export default function RoundResultsScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
-  const roomCode = useGameStore((state) => state.settings.roomCode || "");
-  const meId = useGameStore((state) => state.me?.id || "");
-  const players = useGameStore((state) =>
-    state.players.sort((a, b) => {
-      const scoreA = a.score || 0;
-      const scoreB = b.score || 0;
-      return scoreB - scoreA;
-    })
-  );
-  const prompt = useGameStore((state) => state.round?.prompt || "");
-  const winner = useGameStore((state) =>
-    state.players.find((p) => p.id === state.round?.winnerId)
-  )!;
-  const winningCombo = useGameStore((state) =>
-    state.round?.submissions.find(
-      (s) => s.id === state.round?.winningSubmissionId
-    )
-  )!;
+  const { roomCode, meId, players, prompt, winner, winningCombo } =
+    useRoundResults();
 
   // Small number pop for +1 point near winner row
   const pop = useSharedValue(0);
@@ -89,90 +74,20 @@ export default function RoundResultsScreen({
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
       {/* Header */}
-      <View style={styles.header}>
-        <IconButton variant="ghost" onPress={() => router.back()}>
-          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
-        </IconButton>
-        <Text style={[styles.title, { color: isDark ? "#fff" : "#111" }]}>
-          Round Results
-        </Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <RoundResultsHeader isDark={isDark} />
 
       {/* Prompt */}
-      <Animated.View
-        entering={FadeInDown.springify()}
-        style={[
-          styles.promptCard,
-          { backgroundColor: isDark ? "#111" : "#111" },
-        ]}
-      >
-        <Text style={styles.promptTitle}>Prompt</Text>
-        <Text style={styles.promptText}>{prompt}</Text>
-      </Animated.View>
+      <PromptCard isDark={isDark} prompt={prompt} />
 
       {/* Winner block */}
-      <Animated.View
-        entering={FadeIn.springify()}
-        style={[
-          styles.winnerCard,
-          { backgroundColor: isDark ? "#151515" : "#FFFFFF" },
-        ]}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={styles.avatar}>{winner?.avatar ?? "🏆"}</Text>
-            <View>
-              <Text
-                style={[styles.winnerName, { color: isDark ? "#fff" : "#111" }]}
-              >
-                {winner?.name}
-              </Text>
-              <Text
-                style={[styles.subtle, { color: isDark ? "#CFCFCF" : "#666" }]}
-              >
-                wins the round!
-              </Text>
-            </View>
-          </View>
-          <Animated.Text style={[styles.plusOne, popStyle]}>+1</Animated.Text>
-        </View>
-
-        <View style={{ marginTop: 10, gap: 6 }}>
-          {winningCombo?.texts.map((t, idx) => (
-            <Text
-              key={idx}
-              style={[styles.comboText, { color: isDark ? "#fff" : "#111" }]}
-            >
-              {winningCombo?.texts.length > 1 ? `${idx + 1}. ` : ""}
-              {t}
-            </Text>
-          ))}
-        </View>
-
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-          <Button
-            title="Save combo"
-            variant="secondary"
-            size="sm"
-            fullWidth={false}
-            onPress={() => onSaveCombo?.(winningCombo)}
-          />
-          <Button
-            title="Share"
-            variant="secondary"
-            size="sm"
-            fullWidth={false}
-            onPress={() => onShare?.(winningCombo)}
-          />
-        </View>
-      </Animated.View>
+      <WinnerCard
+        isDark={isDark}
+        winner={winner}
+        winningCombo={winningCombo}
+        popStyle={popStyle}
+        onSaveCombo={onSaveCombo}
+        onShare={onShare}
+      />
 
       {/* Scoreboard */}
       <Animated.View
@@ -358,32 +273,3 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
 });
-
-/**
- * Usage examples
- *
- * // 1) RevealSequenceScreen
- * <RevealSequenceScreen
- *   prompt={"Why can't I sleep at night?"}
- *   items=[
- *     { id:'a', texts:["A romantic candlelit dinner with homicide."] },
- *     { id:'b', texts:["Bees?"] },
- *     { id:'c', texts:["A mime having a stroke."], isWinner:true },
- *   ]
- *   autoPlay
- *   autoDelayMs={1000}
- *   onFinished={(winnerId)=> navigation.replace('RoundResults',{ winnerId })}
- * />
- *
- * // 2) RoundResultsScreen
- * <RoundResultsScreen
- *   prompt={"Why can't I sleep at night?"}
- *   winner={{ id:'p3', name:'Alex', avatar:'😎' }}
- *   winningCombo={{ id:'c', texts:["A mime having a stroke."] }}
- *   scoreboard={[{id:'p3', name:'Alex', score:3},{id:'p1', name:'Kavi', score:2},{id:'p2', name:'Zee', score:1}]}
- *   onNextRound={() => navigation.replace('NextRound')}
- *   onSaveCombo={(combo)=>{}}
- *   onShare={(combo)=>{}}
- *   onBackToLobby={()=> navigation.popToTop()}
- * />
- */

@@ -1,22 +1,15 @@
-import SubmissionCard from "@/components/pages/judges-view/submissions-card";
-import { Button, IconButton } from "@/components/ui/button";
+import JudgeFooter from "@/components/pages/judges-view/judge-footer";
+import JudgeHeader from "@/components/pages/judges-view/judge-header";
+import PromptCard from "@/components/pages/judges-view/prompt-card";
+import SubmissionsGrid from "@/components/pages/judges-view/submissions-grid";
 import ConfirmModal from "@/components/ui/modal";
-import { Progress } from "@/components/ui/progress";
+import { useJudgeActions } from "@/hooks/useJudgeActions";
 import { useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
-import { Ionicons } from "@expo/vector-icons";
 import { router, useNavigation } from "expo-router";
 import * as React from "react";
 import { useEffect } from "react";
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  ToastAndroid,
-  useColorScheme,
-  View,
-} from "react-native";
-import Animated, { FadeIn, FadeInDown, FadeOut } from "react-native-reanimated";
+import { StyleSheet, useColorScheme } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -69,10 +62,21 @@ export default function JudgeViewScreen({
     React.useState(false);
   const [prompt, setPrompt] = React.useState("Loading prompt...");
 
-  const [expectedSubmissions, setExpectedSubmissions] = React.useState(0);
+  const {
+    prompt: fetchedPrompt,
+    expectedSubmissions,
+    leaveRoom,
+    revealCard,
+    skipPrompt,
+    confirmWinner,
+    fetchRoomState,
+  } = useJudgeActions();
+
+  React.useEffect(() => {
+    fetchRoomState();
+  }, []);
 
   const revealedCount = submissions.filter((s) => s.revealed).length;
-  const submittedCount = submissions.length;
   const [confirmVisible, setConfirmVisible] = React.useState(false);
   const navigation = useNavigation();
   const meId = useGameStore((state) => state.me?.id);
@@ -85,7 +89,11 @@ export default function JudgeViewScreen({
     onPick?.(id);
   }
 
-  const leaveRoom = async () => {
+  useEffect(() => {
+    setPrompt(fetchedPrompt);
+  }, [fetchedPrompt]);
+
+  const leaveRoomHandler = async () => {
     const { error } = await supabase.functions.invoke("endpoints", {
       body: {
         action: "leave_room",
@@ -101,57 +109,7 @@ export default function JudgeViewScreen({
       router.replace("/welcome");
     }
   };
-  const headerFg = isDark ? "#fff" : "#0B0B0B";
-  const revealCard = async (submission_id: string) => {
-    const { data, error } = await supabase.functions.invoke("endpoints", {
-      body: {
-        action: "reveal_submission",
-        payload: {
-          round_id: roundId,
-          user_id: meId,
-          submission_id: submission_id,
-        },
-      },
-    });
-  };
 
-  const skipPrompt = async () => {
-    const { data, error } = await supabase.functions.invoke("endpoints", {
-      body: {
-        action: "skip_prompt",
-        payload: {
-          round_id: roundId,
-          user_id: meId,
-        },
-      },
-    });
-    if (!error) {
-      setPrompt(data.prompt.text);
-    }
-  };
-
-  const confirmWinner = async () => {
-    if (!selectedId) {
-      setClickedConfirmNoWinner(true);
-      ToastAndroid.showWithGravity(
-        "Please select a winner before confirming.",
-        ToastAndroid.SHORT,
-        ToastAndroid.CENTER
-      );
-      return;
-    }
-    const { data, error } = await supabase.functions.invoke("endpoints", {
-      body: {
-        action: "judge_pick",
-        payload: {
-          round_id: roundId,
-          user_id: meId,
-          submission_id: selectedId,
-        },
-      },
-    });
-    router.replace("/round-results");
-  };
   useEffect(() => {
     // Intercept only "back" navigations
     const unsub = navigation.addListener("beforeRemove", (e: any) => {
@@ -162,135 +120,44 @@ export default function JudgeViewScreen({
     });
     return unsub;
   }, []);
-  useEffect(() => {
-    (async () => {
-      const { data: roomState } = await supabase.functions.invoke("endpoints", {
-        body: {
-          action: "room_state",
-          payload: {
-            room_code: useGameStore.getState().settings.roomCode,
-            user_id: useGameStore.getState().me?.id,
-          },
-        },
-      });
-      setPrompt(roomState.round.prompt.text);
-
-      // judge view isn't always available.
-      roomState.round.judge_view?.map((submission: any) => {
-        submitForPlayer({
-          id: submission.submission_id,
-          texts: submission.cards.map((card: any) => card.text),
-          revealed: false,
-        });
-      });
-      setExpectedSubmissions(roomState.round.expected_submissions);
-    })();
-  }, []);
 
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
       {/* Header */}
-      <View style={[styles.header]}>
-        {/* <IconButton variant="ghost" onPress={() => router.back()}>
-          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
-        </IconButton> */}
-        <View style={{ width: 44 }} />
-        <Text style={[styles.title, { color: headerFg }]}>Judge</Text>
-        {/* <IconButton variant="ghost" onPress={onShuffle}>
-            <Ionicons name="refresh-sharp" size={24} color="currentColor" />
-          </IconButton> */}
-        <IconButton variant="ghost" onPress={skipPrompt}>
-          <Ionicons name="play-forward" size={24} color="currentColor" />
-        </IconButton>
-      </View>
+      <JudgeHeader isDark={isDark} skipPrompt={skipPrompt} />
 
       {/* Prompt (Black Card) */}
-      <Animated.View
-        entering={FadeInDown.springify()}
-        style={[
-          styles.promptCard,
-          {
-            backgroundColor: isDark ? "#111" : "#111",
-            borderColor: isDark ? "#2C2C2C" : "#0f0f0f",
-          },
-        ]}
-      >
-        <Text style={styles.promptTitle}>
-          Prompt {pickCount > 1 ? `(Pick ${pickCount})` : ""}
-        </Text>
-        <Text style={styles.promptText}>{prompt}</Text>
-        <View style={styles.metaRow}>
-          <Progress
-            value={(submissions.length / expectedSubmissions) * 100}
-            indicatorClassName="bg-purple-400"
-          />
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaText}>
-            Submissions: {submittedCount}/{expectedSubmissions}
-          </Text>
-          <Text style={styles.metaDot}>•</Text>
-          <Text style={styles.metaText}>
-            Revealed: {revealedCount}/{submittedCount}
-          </Text>
-        </View>
-        {onRevealAll ? (
-          <View style={{ marginTop: 8 }}>
-            <Button
-              title="Reveal all"
-              variant="secondary"
-              size="sm"
-              fullWidth={false}
-              onPress={onRevealAll}
-            />
-          </View>
-        ) : null}
-      </Animated.View>
+      <PromptCard
+        isDark={isDark}
+        pickCount={pickCount}
+        prompt={prompt}
+        submissions={submissions}
+        expectedSubmissions={expectedSubmissions}
+        revealedCount={revealedCount}
+        onRevealAll={onRevealAll}
+      />
 
       {/* Submissions Grid */}
-      <FlatList
-        data={submissions}
-        keyExtractor={(s) => s.id}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 12, paddingHorizontal: 12 }}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 120, gap: 12 }}
-        renderItem={({ item }) => (
-          <SubmissionCard
-            key={item.id}
-            item={item}
-            isSelected={selectedId === item.id}
-            onReveal={() => revealCard(item.id)}
-            onSelect={() => handleSelect(item.id)}
-            pickCount={pickCount}
-          />
-        )}
+      <SubmissionsGrid
+        submissions={submissions}
+        selectedId={selectedId}
+        pickCount={pickCount}
+        onReveal={revealCard}
+        onSelect={handleSelect}
       />
 
       {/* Footer */}
-      <View style={styles.footer}>
-        {!selectedId && (
-          <Animated.Text
-            style={styles.footerText}
-            entering={FadeIn}
-            exiting={FadeOut}
-          >
-            Tap on a revealed card to select a winner
-          </Animated.Text>
-        )}
-
-        <Button
-          title="Confirm Winner"
-          onPress={confirmWinner}
-          disabled={!selectedId}
-        />
-      </View>
+      <JudgeFooter
+        selectedId={selectedId}
+        confirmWinner={() => confirmWinner(selectedId)}
+      />
 
       <ConfirmModal
         visible={confirmVisible}
         onCancel={() => setConfirmVisible(false)}
-        onConfirm={leaveRoom}
+        onConfirm={leaveRoomHandler}
       />
     </SafeAreaView>
   );
@@ -349,27 +216,3 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
 });
-
-/**
- * Usage sample
- * <JudgeViewScreen
- *   prompt={"Why can't I sleep at night?"}
- *   pickCount={1}
- *   submissions=[
- *     { id: 'a', texts: ['A romantic candlelit dinner with homicide.'], revealed: false },
- *     { id: 'b', texts: ['Bees?'], revealed: true },
- *     { id: 'c', texts: ['A mime having a stroke.'], revealed: false },
- *     { id: 'd', texts: ['The miracle of childbirth.'], revealed: true },
- *   ]
- *   totalPlayers={5}
- *   timeLeftSec={20}
- *   timeTotalSec={60}
- *   onReveal={(id)=>{}}
- *   onRevealAll={()=>{}}
- *   onPick={(id)=>{}}
- *   onConfirm={(id)=>{}}
- *   onSkip={()=>{}}
- *   onShuffle={()=>{}}
- *   onBack={()=> navigation.goBack()}
- * />
- */

@@ -1,30 +1,15 @@
-import { Button, IconButton } from "@/components/ui/button";
-import Counter from "@/components/ui/counter";
-import { Toggle } from "@/components/ui/toggle";
-import { GameSettings, Pack, useGameStore } from "@/lib/state";
+import Header from "@/components/pages/create-game/header";
+import HostRoomSection from "@/components/pages/create-game/host-room-section";
+import PacksSection from "@/components/pages/create-game/packs-section";
+import RulesSection from "@/components/pages/create-game/rules-section";
+import { Button } from "@/components/ui/button";
+import { useCreateGame } from "@/hooks/useCreateGame";
+import { Pack, useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import * as React from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  ToastAndroid,
-  useColorScheme,
-  View,
-} from "react-native";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { ScrollView, StyleSheet, Text, useColorScheme } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-/**
- * CreateGameScreen.tsx
- * Single-file, no custom reusable components. Pure RN + small Reanimated touches.
- * Host can set: display name, room code, public/private, family filter, packs, limits.
- * Emits onStart(settings) with a normalized config object.
- */
 
 export default function CreateGameScreen({
   onBack,
@@ -35,19 +20,12 @@ export default function CreateGameScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
-
-  // ---------------- State ----------------
   const [hostName, setHostName] = React.useState(defaultName);
+  const { handleStart } = useCreateGame();
+
   const updateSettings = useGameStore((state) => state.updateSettings);
-  const setMe = useGameStore((state) => state.setMe);
-  const roomCode = useGameStore((state) => state.settings.roomCode);
-  const isPrivate = useGameStore((state) => state.settings.isPrivate);
-  const familyMode = useGameStore((state) => state.settings.familyMode);
-  const roundLimit = useGameStore((state) => state.settings.roundLimit);
-  const scoreLimit = useGameStore((state) => state.settings.scoreLimit);
-  const handSize = useGameStore((state) => state.settings.handSize);
   const selectedPacks = useGameStore((state) => state.settings.packs);
-  const [packs, setPacks] = React.useState<Pack[]>([]);
+  const [packs, setPacks] = React.useState<Pack[]>([]); // Properly type `packs`
 
   React.useEffect(() => {
     (async () => {
@@ -71,299 +49,41 @@ export default function CreateGameScreen({
     });
   }
 
-  async function handleStart() {
-    if (!hostName.trim()) {
-      ToastAndroid.showWithGravity(
-        "Please enter your display name.",
-        ToastAndroid.SHORT,
-        ToastAndroid.CENTER
-      );
-      return;
-    }
-    if (!roomCode.trim() || roomCode.length < 4) {
-      ToastAndroid.showWithGravity(
-        "Please use a 4–8 character room code.",
-        ToastAndroid.SHORT,
-        ToastAndroid.CENTER
-      );
-      return;
-    }
-    if (selectedPacks.length === 0) {
-      ToastAndroid.showWithGravity(
-        "Please select at least one pack.",
-        ToastAndroid.SHORT,
-        ToastAndroid.CENTER
-      );
-      return;
-    }
-
-    // Safety: if familyMode, drop NSFW pack if user left it on
-    const normalized = familyMode
-      ? selectedPacks.filter((p) => !p.is_nsfw)
-      : selectedPacks;
-
-    const settings: GameSettings = {
-      roomCode: roomCode.toUpperCase(),
-      isPrivate,
-      familyMode,
-      roundLimit: Math.max(0, roundLimit),
-      scoreLimit: Math.max(0, scoreLimit),
-      handSize: Math.max(4, Math.min(15, handSize)),
-      packs: normalized,
-    };
-    const { data, error } = await supabase.functions.invoke("endpoints", {
-      body: {
-        action: "create_room",
-        payload: {
-          code: settings.roomCode,
-          is_private: settings.isPrivate,
-          family_mode: settings.familyMode,
-          round_limit: settings.roundLimit,
-          score_limit: settings.scoreLimit,
-          hand_size: settings.handSize,
-          display_name: hostName.trim(),
-          packs: selectedPacks.map((p) => p.id),
-        },
-      },
-    });
-    setMe({
-      id: data.room.host_id,
-      name: hostName.trim(),
-    });
-
-    console.log("Create room response:", data, error);
-
-    updateSettings(settings);
-    router.push("/lobby");
-  }
-
   function regenerateCode() {
     updateSettings({ roomCode: makeRoomCode() });
-    //setRoomCode(makeRoomCode());
   }
-  const router = useRouter();
 
   // ---------------- Render ----------------
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
-      <View style={styles.header}>
-        <IconButton
-          variant="ghost"
-          onPress={() => {
-            router.back();
-          }}
-        >
-          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
-        </IconButton>
-        <Text style={[styles.title, { color: isDark ? "#fff" : "#0B0B0B" }]}>
-          Create Game
-        </Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <Header title="Create Game" isDark={isDark} />
 
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Host & Room */}
-        <Animated.View
-          entering={FadeInDown.springify()}
-          style={[
-            styles.card,
-            { backgroundColor: isDark ? "#151515" : "#fff" },
-          ]}
-        >
-          <Text
-            style={[styles.sectionTitle, { color: isDark ? "#fff" : "#111" }]}
-          >
-            Host & Room
-          </Text>
-
-          <Text style={[styles.label, { color: isDark ? "#EDEDED" : "#333" }]}>
-            Display name
-          </Text>
-          <TextInput
-            placeholder="Your name"
-            placeholderTextColor={isDark ? "#777" : "#999"}
-            value={hostName}
-            onChangeText={setHostName}
-            style={[
-              styles.input,
-              {
-                color: isDark ? "#fff" : "#111",
-                backgroundColor: isDark ? "#1E1E1E" : "#F3F3F4",
-                borderColor: isDark ? "#2C2C2C" : "#E4E4E7",
-              },
-            ]}
-          />
-
-          <View style={styles.rowBetween}>
-            <View style={{ flex: 1, marginRight: 10 }}>
-              <Text
-                style={[styles.label, { color: isDark ? "#EDEDED" : "#333" }]}
-              >
-                Room code
-              </Text>
-              <TextInput
-                value={roomCode}
-                onChangeText={(t) =>
-                  updateSettings({ roomCode: t.toUpperCase().slice(0, 8) })
-                }
-                autoCapitalize="characters"
-                style={[
-                  styles.input,
-                  {
-                    color: isDark ? "#fff" : "#111",
-                    backgroundColor: isDark ? "#1E1E1E" : "#F3F3F4",
-                    borderColor: isDark ? "#2C2C2C" : "#E4E4E7",
-                  },
-                ]}
-              />
-            </View>
-            <Pressable
-              onPress={regenerateCode}
-              style={[
-                styles.smallButton,
-                { backgroundColor: isDark ? "#2A2A2A" : "#EDEBFF" },
-              ]}
-            >
-              <Text
-                style={{
-                  fontWeight: "700",
-                  color: isDark ? "#EDEDED" : "#4B3EF7",
-                }}
-              >
-                New
-              </Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.rowBetween}>
-            <Toggle
-              label="Private room"
-              value={isPrivate}
-              onToggle={() => updateSettings({ isPrivate: !isPrivate })}
-              isDark={isDark}
-            />
-            <Toggle
-              label="Family mode"
-              value={familyMode}
-              onToggle={() => updateSettings({ familyMode: !familyMode })}
-              isDark={isDark}
-            />
-          </View>
-        </Animated.View>
+        <HostRoomSection
+          hostName={hostName}
+          setHostName={setHostName}
+          isDark={isDark}
+          regenerateCode={regenerateCode}
+        />
 
         {/* Rules */}
-        <Animated.View
-          entering={FadeInDown.delay(60).springify()}
-          style={[
-            styles.card,
-            { backgroundColor: isDark ? "#151515" : "#fff" },
-          ]}
-        >
-          <Text
-            style={[styles.sectionTitle, { color: isDark ? "#fff" : "#111" }]}
-          >
-            Rules
-          </Text>
-          <Counter
-            label="Round limit (0 = unlimited)"
-            value={roundLimit}
-            setValue={() => {
-              updateSettings({ roundLimit });
-            }}
-            min={0}
-            max={30}
-            isDark={isDark}
-          />
-          <Counter
-            label="Score limit (0 = unlimited)"
-            value={scoreLimit}
-            setValue={() => {
-              updateSettings({ scoreLimit });
-            }}
-            min={0}
-            max={30}
-            isDark={isDark}
-          />
-          <Counter
-            label="Hand size"
-            value={handSize}
-            setValue={() => updateSettings({ handSize })}
-            min={5}
-            max={15}
-            isDark={isDark}
-          />
-        </Animated.View>
+        <RulesSection isDark={isDark} />
 
         {/* Packs */}
-        <Animated.View
-          entering={FadeInDown.delay(120).springify()}
-          style={[
-            styles.card,
-            { backgroundColor: isDark ? "#151515" : "#fff" },
-          ]}
-        >
-          <Text
-            style={[styles.sectionTitle, { color: isDark ? "#fff" : "#111" }]}
-          >
-            Packs
-          </Text>
-          <View style={styles.chipsWrap}>
-            {packs.map((p) => {
-              const active = selectedPacks.some((sp) => sp.id === p.id);
-              return (
-                <Pressable
-                  key={p.id}
-                  onPress={() => togglePack(p)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: active
-                        ? isDark
-                          ? "#8B7BFF"
-                          : "#6A5AE0"
-                        : isDark
-                          ? "#222"
-                          : "#F1F1F3",
-                      borderColor: isDark ? "#2C2C2C" : "#E4E4E7",
-                      opacity: active ? 1 : 0.5,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      color: active
-                        ? isDark
-                          ? "#0B0B0B"
-                          : "#fff"
-                        : isDark
-                          ? "#EDEDED"
-                          : "#222",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {p.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          {familyMode && selectedPacks.some((p) => p.is_nsfw) && (
-            <Text
-              style={{ color: isDark ? "#F1C40F" : "#8a6d3b", marginTop: 6 }}
-            >
-              Family mode is on: NSFW pack will be disabled at start.
-            </Text>
-          )}
-        </Animated.View>
+        <PacksSection isDark={isDark} packs={packs} togglePack={togglePack} />
 
         {/* Start */}
         <Animated.View entering={FadeIn.delay(180)}>
-          <Button title="Start Game" variant="primary" onPress={handleStart} />
+          <Button
+            title="Start Game"
+            variant="primary"
+            onPress={async () => await handleStart(hostName)} // Pass hostName explicitly
+          />
           <Text
             style={[styles.hint, { color: isDark ? "#9CA3AF" : "#6B7280" }]}
           >
@@ -387,13 +107,6 @@ function makeRoomCode() {
 // -------------- Styles --------------
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
   container: {
     padding: 16,
     gap: 12,
@@ -440,11 +153,3 @@ const styles = StyleSheet.create({
   },
   hint: { textAlign: "center", marginBottom: 16 },
 });
-
-/**
- * Usage:
- * <CreateGameScreen
- *   onBack={() => navigation.goBack()}
- *   onStart={(settings) => navigation.navigate('Lobby', { settings })}
- * />
- */

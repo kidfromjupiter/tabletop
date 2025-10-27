@@ -1,16 +1,14 @@
+import Footer from "@/components/pages/lobby/footer";
+import Header from "@/components/pages/lobby/header";
 import PlayerCard from "@/components/pages/lobby/player-card";
 import RoomCard from "@/components/pages/lobby/room-card";
 import Rules from "@/components/pages/lobby/rules";
-import { Button, IconButton } from "@/components/ui/button";
 import ConfirmModal from "@/components/ui/modal";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
+import { useLobbyActions } from "@/hooks/useLobbyActions";
 import { Player, useGameStore } from "@/lib/state";
-import { Ionicons } from "@expo/vector-icons";
-import { createClient } from "@supabase/supabase-js";
 import * as Clipboard from "expo-clipboard";
 import { useNavigation, useRouter } from "expo-router";
-import * as React from "react";
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -53,8 +51,12 @@ export default function LobbyScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const [confirmVisible, setConfirmVisible] = React.useState(false);
+  const {
+    leaveRoom: leaveRoomAction,
+    toggleReady: toggleReadyAction,
+    startRound: startRoundAction,
+  } = useLobbyActions();
+  const [confirmVisible, setConfirmVisible] = useState(false);
 
   // zustand
   const players = useGameStore((state) => state.players); // --- IGNORE ---
@@ -96,28 +98,11 @@ export default function LobbyScreen({
 
   const headerFg = isDark ? "#fff" : "#0B0B0B";
 
-  const leaveRoom = async () => {
-    const { error } = await supabase.functions.invoke("endpoints", {
-      body: {
-        action: "leave_room",
-        payload: {
-          user_id: meId,
-          room_code: settings.roomCode,
-        },
-      },
-    });
-    if (!error) {
-      setMe(null);
-      setSettings({ roomCode: "" });
-      router.replace("/welcome");
-    }
-  };
-
   useEffect(() => {
     const unsub = navigation.addListener("beforeRemove", async (e: any) => {
       if (!navigation.canGoBack()) {
         // sometimes there's no nav stack for whatever reason. We're handling it manually
-        await leaveRoom();
+        await leaveRoomAction();
       }
       if (e.data.action.type !== "GO_BACK") return; // Allow non-back navigations
       e.preventDefault(); // stop the default behavior
@@ -142,30 +127,6 @@ export default function LobbyScreen({
       />
     );
   }
-  const toggleReady = async () => {
-    await supabase.functions.invoke("endpoints", {
-      body: {
-        action: "toggle_ready",
-        payload: {
-          user_id: meId,
-          room_code: settings?.roomCode,
-          is_ready: !players.find((p) => p.id === meId)?.isReady,
-        },
-      },
-    });
-  };
-
-  const startRound = async () => {
-    await supabase.functions.invoke("endpoints", {
-      body: {
-        action: "start_round",
-        payload: {
-          room_code: settings?.roomCode,
-          user_id: meId,
-        },
-      },
-    });
-  };
 
   const copyToClipboard = () => {
     // new API is async-friendly. But using async makes button flicker
@@ -176,25 +137,8 @@ export default function LobbyScreen({
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
       <ScrollView>
-        {/* Header */}
-        <View style={styles.header}>
-          <IconButton
-            variant="ghost"
-            onPress={() => {
-              router.back();
-            }}
-          >
-            <Ionicons
-              name="arrow-back-outline"
-              size={24}
-              color="currentColor"
-            />
-          </IconButton>
-          <Text style={[styles.title, { color: headerFg }]}>Lobby</Text>
-          <View style={{ width: 44 }} />
-        </View>
+        <Header title="Lobby" isDark={isDark} />
 
-        {/* Room Card */}
         <RoomCard
           settings={settings}
           isDark={isDark}
@@ -203,7 +147,6 @@ export default function LobbyScreen({
           onCopyInvite={copyToClipboard}
         />
 
-        {/* Players */}
         <Animated.View
           entering={FadeIn.springify()}
           style={[
@@ -215,7 +158,7 @@ export default function LobbyScreen({
             <Text style={[styles.sectionTitle, { color: headerFg }]}>
               Players ({players.length})
             </Text>
-            {isHost ? (
+            {isHost && (
               <Pressable onPress={onShuffleJudges}>
                 <Text
                   style={[
@@ -226,7 +169,7 @@ export default function LobbyScreen({
                   Shuffle judge order
                 </Text>
               </Pressable>
-            ) : null}
+            )}
           </View>
           <FlatList
             data={players}
@@ -238,7 +181,6 @@ export default function LobbyScreen({
           />
         </Animated.View>
 
-        {/* Rules & Packs Summary */}
         <Rules
           settings={settings}
           isDark={isDark}
@@ -246,37 +188,20 @@ export default function LobbyScreen({
           onToggleFamilyMode={onToggleFamilyMode}
         />
 
-        {/* Footer controls */}
-        <View style={{ height: 12 }} />
-        <View style={styles.footerBar}>
-          {isHost ? (
-            <Button
-              title="Start Game"
-              onPress={startRound}
-              disabled={!allReady}
-            />
-          ) : (
-            <Button
-              title={
-                players.find((p) => p.id === meId)?.isReady
-                  ? "Unready"
-                  : "I'm Ready"
-              }
-              variant={
-                players.find((p) => p.id === meId)?.isReady
-                  ? "secondary"
-                  : "primary"
-              }
-              onPress={toggleReady}
-            />
-          )}
-        </View>
+        <Footer
+          isHost={isHost}
+          allReady={allReady}
+          players={players}
+          meId={meId}
+          onStart={startRoundAction}
+          onToggleReady={toggleReadyAction}
+        />
       </ScrollView>
 
       <ConfirmModal
         visible={confirmVisible}
         onCancel={() => setConfirmVisible(false)}
-        onConfirm={leaveRoom}
+        onConfirm={leaveRoomAction}
       />
     </SafeAreaView>
   );
@@ -362,21 +287,3 @@ const styles = StyleSheet.create({
   footerBar: { paddingHorizontal: 16, paddingBottom: 16 },
   link: { fontSize: 14, fontWeight: "600" },
 });
-
-/**
- * Usage
- * <LobbyScreen
- *   isHost={true}
- *   players={[{id:'1', name:'Kavi', isHost:true, isReady:true},{id:'2', name:'Alex', isReady:false}]}
- *   meId={'1'}
- *   settings={{ roomCode:'ABCD5', isPrivate:true, familyMode:false, roundLimit:8, scoreLimit:10, handSize:10, packs:['Base','Party'] }}
- *   onStart={() => navigation.navigate('Round')}
- *   onToggleReady={(id)=>{}}
- *   onKick={(id)=>{}}
- *   onPromote={(id)=>{}}
- *   onShuffleJudges={()=>{}}
- *   onCopyInvite={()=>{}}
- *   onLeave={()=> navigation.goBack()}
- *   onToggleFamilyMode={(v)=>{}}
- * />
- */

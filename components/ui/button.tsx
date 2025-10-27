@@ -373,21 +373,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-
-/**
- * Usage examples
- *
- * // WelcomeScreen
- * <Button title="Create Game" variant="primary" onPress={onCreateGame} />
- * <Button title="Join Game" variant="secondary" onPress={onJoinGame} />
- * <Button title="Pass & Play" variant="ghost" onPress={onPassAndPlay} />
- *
- * // CreateGameScreen
- * <Button title="New" variant="secondary" size="sm" fullWidth={false} onPress={regenerateCode} />
- * <Button title="Start Game" variant="primary" size="lg" onPress={handleStart} />
- * <StepButton label="−" onPress={dec} />
- * <StepButton label="+" onPress={inc} />
- *
- * // Icon-only (e.g., back chevron)
- * <IconButton variant="ghost" onPress={onBack}>{"‹"}</IconButton>
- */
