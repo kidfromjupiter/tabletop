@@ -167,9 +167,9 @@ export default function LobbyScreen({
     });
   };
 
-  const copyToClipboard = async () => {
-    // new API is async-friendly
-    await Clipboard.setStringAsync(settings.roomCode);
+  const copyToClipboard = () => {
+    // new API is async-friendly. But using async makes button flicker
+    Clipboard.setStringAsync(settings.roomCode);
   };
   return (
     <SafeAreaView

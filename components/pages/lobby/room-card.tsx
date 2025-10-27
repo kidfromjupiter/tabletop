@@ -50,7 +50,7 @@ export default function RoomCard({
         <Button
           title="Copy invite"
           variant="secondary"
-          size="sm"
+          size="md"
           fullWidth={false}
           onPress={onCopyInvite}
         />

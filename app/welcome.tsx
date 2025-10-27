@@ -1,10 +1,19 @@
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { PaperModal } from "@/components/ui/paper-modal";
 import { useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
+import * as Updates from "expo-updates";
 import * as React from "react";
-import { Image, StyleSheet, Text, useColorScheme, View } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  useColorScheme,
+  View,
+} from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   FadeIn,
@@ -14,7 +23,6 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 /**
  * WelcomeScreen.tsx (no reusables)
  * Single-file, self-contained welcome screen for a CAH-style game.
@@ -51,6 +59,30 @@ export default function WelcomeScreen({
   const [gameResumeNextScreen, setGameResumeNextScreen] = React.useState<
     "judge-view" | "player-view" | "lobby" | null
   >(null);
+  async function onFetchUpdateAsync() {
+    try {
+      const update = await Updates.checkForUpdateAsync();
+
+      if (update.isAvailable) {
+        ToastAndroid.showWithGravity(
+          "Update available! Downloading...",
+          ToastAndroid.LONG,
+          ToastAndroid.CENTER
+        );
+        await Updates.fetchUpdateAsync();
+
+        ToastAndroid.showWithGravity(
+          "Reloading to apply update...",
+          ToastAndroid.LONG,
+          ToastAndroid.CENTER
+        );
+        await Updates.reloadAsync();
+      }
+    } catch (error) {
+      // You can also add an alert() to see the error message in case of an error when fetching updates.
+      alert(`Error fetching latest Expo update: ${error}`);
+    }
+  }
 
   // tiny bob animation for logo
   const bob = useSharedValue(0);
@@ -231,7 +263,14 @@ export default function WelcomeScreen({
           </View>
 
           <View style={{ flex: 1 }} />
-          <Text style={styles.footer}>Built with ❤️ by kidfromjupiter</Text>
+          <View style={{ justifyContent: "center", alignItems: "center" }}>
+            <IconButton onPress={onFetchUpdateAsync} variant="ghost">
+              <Ionicons name="refresh" size={24} color="white" />
+            </IconButton>
+          </View>
+          <Text style={styles.footer}>
+            Built for shits and giggles by kidfromjupiter
+          </Text>
         </View>
         <PaperModal
           visible={sheetOpen}
