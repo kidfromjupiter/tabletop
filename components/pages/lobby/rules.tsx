@@ -1,3 +1,4 @@
+import { GameSettings } from "@/lib/state";
 import React from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
@@ -9,13 +10,7 @@ export default function Rules({
   headerFg,
   onToggleFamilyMode,
 }: {
-  settings: {
-    roundLimit: number;
-    scoreLimit: number;
-    handSize: number;
-    familyMode: boolean;
-    packs: string[];
-  };
+  settings: GameSettings;
   isDark: boolean;
   headerFg: string;
   onToggleFamilyMode?: (value: boolean) => void;
@@ -64,7 +59,7 @@ export default function Rules({
         }}
       >
         {settings.packs.map((p) => (
-          <PackTag key={p} label={p} />
+          <PackTag key={p.id} label={p.name} />
         ))}
       </View>
     </Animated.View>

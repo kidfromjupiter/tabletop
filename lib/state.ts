@@ -13,6 +13,12 @@ export type Player = {
   score?: number;
 };
 
+export type Pack = {
+  id: string;
+  name: string;
+  is_nsfw: boolean;
+};
+
 export type GameSettings = {
   roomCode: string;
   isPrivate: boolean;
@@ -20,7 +26,7 @@ export type GameSettings = {
   roundLimit: number; // 0 = unlimited
   scoreLimit: number; // 0 = unlimited
   handSize: number; // e.g., 10
-  packs: string[]; // pack IDs or names
+  packs: Pack[]; // pack IDs or names
 };
 
 export type Submission = {
@@ -88,7 +94,7 @@ export type StoreState = {
   // settings
   updateSettings: (patch: Partial<GameSettings>) => void;
   toggleFamilyMode: (val?: boolean) => void;
-  setPacks: (packs: string[]) => void;
+  setPacks: (packs: Pack[]) => void;
 
   // players
   addPlayer: (p: Player) => void;
@@ -133,7 +139,7 @@ const initialSettings: GameSettings = {
   roundLimit: 8,
   scoreLimit: 10,
   handSize: 10,
-  packs: ["base"],
+  packs: [{ id: "base", name: "Base", is_nsfw: false }],
 };
 const initialState: Omit<
   StoreState,

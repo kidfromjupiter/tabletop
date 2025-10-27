@@ -2,9 +2,8 @@ import SubmissionCard from "@/components/pages/judges-view/submissions-card";
 import { Button } from "@/components/ui/button";
 import ConfirmModal from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
-import { SupabaseClient } from "@supabase/supabase-js";
+import supabase from "@/lib/supabase";
 import { router, useNavigation } from "expo-router";
 import * as React from "react";
 import { useEffect } from "react";
@@ -59,7 +58,6 @@ export default function JudgeViewScreen({
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
-  const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   //const [submissions, setSubmissions] = React.useState<Submission[]>([]);

@@ -1,13 +1,10 @@
 import type { RevealItem } from "@/app/round-results";
 import { RevealRow } from "@/components/pages/round-results/reveal-row";
 import { Button, IconButton } from "@/components/ui/button";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
+import supabase from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  RealtimePostgresChangesPayload,
-  SupabaseClient,
-} from "@supabase/supabase-js";
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, useColorScheme, View } from "react-native";
@@ -31,7 +28,6 @@ export default function RevealSequenceScreen({
     []
   );
   const roundId = useGameStore((state) => state.round?.roundId);
-  const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   React.useEffect(() => {
     (async () => {

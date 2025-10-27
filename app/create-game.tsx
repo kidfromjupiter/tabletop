@@ -1,19 +1,18 @@
 import { Button, IconButton } from "@/components/ui/button";
 import Counter from "@/components/ui/counter";
 import { Toggle } from "@/components/ui/toggle";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
-import { GameSettings, useGameStore } from "@/lib/state";
+import { GameSettings, Pack, useGameStore } from "@/lib/state";
+import supabase from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
-import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "expo-router";
 import * as React from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   useColorScheme,
   View,
 } from "react-native";
@@ -37,7 +36,6 @@ export default function CreateGameScreen({
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   // ---------------- State ----------------
   const [hostName, setHostName] = React.useState(defaultName);
   const updateSettings = useGameStore((state) => state.updateSettings);
@@ -49,45 +47,59 @@ export default function CreateGameScreen({
   const scoreLimit = useGameStore((state) => state.settings.scoreLimit);
   const handSize = useGameStore((state) => state.settings.handSize);
   const selectedPacks = useGameStore((state) => state.settings.packs);
+  const [packs, setPacks] = React.useState<Pack[]>([]);
 
-  // Demo pack list (IDs + human labels). Replace with your real catalog.
-  const packs = React.useMemo(
-    () => [
-      { id: "base", name: "Base" },
-      { id: "party", name: "Party Pack" },
-      { id: "family", name: "Family Pack" },
-      { id: "nsfw", name: "NSFW Pack" },
-      { id: "custom", name: "Your Custom Pack" },
-    ],
-    []
-  );
+  React.useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase.from("packs").select("*");
+      const mappedPacks = data?.map((pack) => ({
+        id: pack.id,
+        name: pack.name,
+        is_nsfw: pack.is_nsfw,
+      }));
+      setPacks(mappedPacks || []);
+    })();
+  }, []);
 
   // ---------------- Handlers ----------------
-  function togglePack(id: string) {
+  function togglePack(pack: Pack) {
+    const isSelected = selectedPacks.some((p) => p.id === pack.id);
     updateSettings({
-      packs: selectedPacks.includes(id)
-        ? selectedPacks.filter((p) => p !== id)
-        : [...selectedPacks, id],
+      packs: isSelected
+        ? selectedPacks.filter((p) => p.id !== pack.id)
+        : [...selectedPacks, pack],
     });
   }
 
   async function handleStart() {
     if (!hostName.trim()) {
-      Alert.alert("Missing name", "Please enter your display name.");
+      ToastAndroid.showWithGravity(
+        "Please enter your display name.",
+        ToastAndroid.SHORT,
+        ToastAndroid.CENTER
+      );
       return;
     }
     if (!roomCode.trim() || roomCode.length < 4) {
-      Alert.alert("Room code", "Use a 4–8 character room code.");
+      ToastAndroid.showWithGravity(
+        "Please use a 4–8 character room code.",
+        ToastAndroid.SHORT,
+        ToastAndroid.CENTER
+      );
       return;
     }
     if (selectedPacks.length === 0) {
-      Alert.alert("No packs selected", "Pick at least one pack to play.");
+      ToastAndroid.showWithGravity(
+        "Please select at least one pack.",
+        ToastAndroid.SHORT,
+        ToastAndroid.CENTER
+      );
       return;
     }
 
     // Safety: if familyMode, drop NSFW pack if user left it on
     const normalized = familyMode
-      ? selectedPacks.filter((p) => p !== "nsfw")
+      ? selectedPacks.filter((p) => !p.is_nsfw)
       : selectedPacks;
 
     const settings: GameSettings = {
@@ -97,7 +109,7 @@ export default function CreateGameScreen({
       roundLimit: Math.max(0, roundLimit),
       scoreLimit: Math.max(0, scoreLimit),
       handSize: Math.max(4, Math.min(15, handSize)),
-      packs: Array.from(new Set(normalized)),
+      packs: normalized,
     };
     const { data, error } = await supabase.functions.invoke("endpoints", {
       body: {
@@ -110,6 +122,7 @@ export default function CreateGameScreen({
           score_limit: settings.scoreLimit,
           hand_size: settings.handSize,
           display_name: hostName.trim(),
+          packs: selectedPacks.map((p) => p.id),
         },
       },
     });
@@ -301,11 +314,11 @@ export default function CreateGameScreen({
           </Text>
           <View style={styles.chipsWrap}>
             {packs.map((p) => {
-              const active = selectedPacks.includes(p.id);
+              const active = selectedPacks.some((sp) => sp.id === p.id);
               return (
                 <Pressable
                   key={p.id}
-                  onPress={() => togglePack(p.id)}
+                  onPress={() => togglePack(p)}
                   style={[
                     styles.chip,
                     {
@@ -317,6 +330,7 @@ export default function CreateGameScreen({
                           ? "#222"
                           : "#F1F1F3",
                       borderColor: isDark ? "#2C2C2C" : "#E4E4E7",
+                      opacity: active ? 1 : 0.5,
                     },
                   ]}
                 >
@@ -338,7 +352,7 @@ export default function CreateGameScreen({
               );
             })}
           </View>
-          {familyMode && selectedPacks.includes("nsfw") && (
+          {familyMode && selectedPacks.some((p) => p.is_nsfw) && (
             <Text
               style={{ color: isDark ? "#F1C40F" : "#8a6d3b", marginTop: 6 }}
             >

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { GameSettings } from "@/lib/state";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -11,12 +12,7 @@ export default function RoomCard({
   headerFg,
   onCopyInvite,
 }: {
-  settings: {
-    roomCode: string;
-    isPrivate: boolean;
-    familyMode: boolean;
-    packs: string[];
-  };
+  settings: GameSettings;
   isDark: boolean;
   pulseStyle: any;
   headerFg: string;

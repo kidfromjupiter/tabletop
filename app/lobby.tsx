@@ -36,16 +36,6 @@ import { runOnJS } from "react-native-worklets";
  * - Uses your reusable animated Button components
  */
 
-export type LobbySettings = {
-  roomCode: string;
-  isPrivate: boolean;
-  familyMode: boolean;
-  roundLimit: number; // 0 = unlimited
-  scoreLimit: number; // 0 = unlimited
-  handSize: number;
-  packs: string[]; // names/ids
-};
-
 export default function LobbyScreen({
   onToggleReady,
   onKick,
@@ -124,7 +114,11 @@ export default function LobbyScreen({
   };
 
   useEffect(() => {
-    const unsub = navigation.addListener("beforeRemove", (e: any) => {
+    const unsub = navigation.addListener("beforeRemove", async (e: any) => {
+      if (!navigation.canGoBack()) {
+        // sometimes there's no nav stack for whatever reason. We're handling it manually
+        await leaveRoom();
+      }
       if (e.data.action.type !== "GO_BACK") return; // Allow non-back navigations
       e.preventDefault(); // stop the default behavior
       setConfirmVisible(true);

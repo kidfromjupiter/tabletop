@@ -18,10 +18,9 @@ import SelfHand from "@/components/ui/hand-flatlist";
 import ConfirmModal from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
 import RepeatingCardStack from "@/components/ui/repeating-card-stack";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { StoreState, useGameStore } from "@/lib/state";
+import supabase from "@/lib/supabase";
 import { FontAwesome6 } from "@expo/vector-icons";
-import { SupabaseClient } from "@supabase/supabase-js";
 import { router, useNavigation } from "expo-router";
 import Animated, {
   cancelAnimation,
@@ -40,7 +39,6 @@ const CARD_WIDTH = width * 0.45;
 const CARD_GAP = 5;
 
 export default function PlayerView() {
-  const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const navigation = useNavigation();
 
   // Zustand store hooks

@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { PaperModal } from "@/components/ui/paper-modal";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
-import { SupabaseClient } from "@supabase/supabase-js";
+import supabase from "@/lib/supabase";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as React from "react";
 import { Image, StyleSheet, Text, useColorScheme, View } from "react-native";
@@ -49,7 +48,6 @@ export default function WelcomeScreen({
 
   const room_code = useGameStore((state) => state.settings.roomCode);
   const me_id = useGameStore((state) => state.me?.id);
-  const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const [gameResumeNextScreen, setGameResumeNextScreen] = React.useState<
     "judge-view" | "player-view" | "lobby" | null
   >(null);
