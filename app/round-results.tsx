@@ -64,10 +64,6 @@ export default function RoundResultsScreen({
     })
   );
   const prompt = useGameStore((state) => state.round?.prompt || "");
-  console.log(
-    "useGameStore round in RoundResultsScreen:",
-    useGameStore.getState().round
-  );
   const winner = useGameStore((state) =>
     state.players.find((p) => p.id === state.round?.winnerId)
   )!;

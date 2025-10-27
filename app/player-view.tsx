@@ -52,7 +52,6 @@ export default function PlayerView() {
   );
   const roomCode = useGameStore((state) => state.settings.roomCode);
 
-  // nav guard + modal state
   const [confirmVisible, setConfirmVisible] = useState(false);
   const me = useGameStore((state) => state.me);
   const roundId = useGameStore((state) => state.round?.roundId);
@@ -135,9 +134,7 @@ export default function PlayerView() {
     // Intercept only "back" navigations
     const unsub = navigation.addListener("beforeRemove", (e: any) => {
       if (e.data.action.type !== "GO_BACK") return; // Allow non-back navigations
-      if (!blockNavRef.current) return; // already allowed
       e.preventDefault(); // stop the default behavior
-      pendingActionRef.current = e.data.action; // remember what they tried to do
       setConfirmVisible(true);
     });
 

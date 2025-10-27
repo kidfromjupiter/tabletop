@@ -148,12 +148,17 @@ export function Button({
   );
 }
 export type IconButtonProps = {
-  onPress?: () => void;
+  onPress?: () => void | Promise<void>;
   disabled?: boolean;
-  size?: number; // diameter
-  variant?: ButtonVariant; // controls bg/fg for circle
-  children?: React.ReactNode; // put your icon here
+  size?: number; // diameter in px
+  variant?: ButtonVariant;
+  children?: React.ReactNode; // icon / glyph
   testID?: string;
+
+  // new bits:
+  loading?: boolean; // external/manual loading
+  autoLoading?: boolean; // auto-handle async onPress just like Button
+  indicatorSize?: "small" | "large";
 };
 
 export function IconButton({
@@ -163,6 +168,9 @@ export function IconButton({
   variant = "secondary",
   children,
   testID,
+  loading,
+  autoLoading = true,
+  indicatorSize = "small",
 }: IconButtonProps) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
@@ -173,17 +181,48 @@ export function IconButton({
     transform: [{ scale: scale.value }],
   }));
 
+  // internal loading state for auto mode
+  const [internalLoading, setInternalLoading] = React.useState(false);
+  const isLoading = loading ?? internalLoading;
+  const isDisabled = disabled || isLoading;
+
+  const spinnerColor = fg;
+
+  const handlePress = React.useCallback(async () => {
+    if (!onPress) return;
+    try {
+      const maybePromise = onPress();
+      if (
+        autoLoading &&
+        maybePromise &&
+        typeof (maybePromise as any).then === "function"
+      ) {
+        setInternalLoading(true);
+        await maybePromise;
+      }
+    } finally {
+      if (autoLoading) {
+        setInternalLoading(false);
+      }
+    }
+  }, [onPress, autoLoading]);
+
   return (
-    <Animated.View style={[animated]}>
+    <Animated.View style={[animated, { opacity: isDisabled ? 0.6 : 1 }]}>
       <Pressable
         accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled, busy: isLoading }}
         testID={testID}
-        disabled={disabled}
-        onPressIn={() =>
-          (scale.value = withSpring(0.96, { stiffness: 520, damping: 24 }))
-        }
-        onPressOut={() => (scale.value = withSpring(1))}
-        onPress={onPress}
+        disabled={isDisabled}
+        onPressIn={() => {
+          if (isDisabled) return;
+          scale.value = withSpring(0.96, { stiffness: 520, damping: 24 });
+        }}
+        onPressOut={() => {
+          if (isDisabled) return;
+          scale.value = withSpring(1);
+        }}
+        onPress={handlePress}
         style={{
           width: size,
           height: size,
@@ -195,15 +234,19 @@ export function IconButton({
           borderWidth: variant === "ghost" ? StyleSheet.hairlineWidth : 0,
         }}
       >
-        <Text
-          style={{
-            color: fg,
-            fontSize: Math.max(16, size * 0.36),
-            fontWeight: "700",
-          }}
-        >
-          {children ?? "•"}
-        </Text>
+        {isLoading ? (
+          <ActivityIndicator size={indicatorSize} color={spinnerColor} />
+        ) : (
+          <Text
+            style={{
+              color: fg,
+              fontSize: Math.max(16, size * 0.36),
+              fontWeight: "700",
+            }}
+          >
+            {children ?? "•"}
+          </Text>
+        )}
       </Pressable>
     </Animated.View>
   );

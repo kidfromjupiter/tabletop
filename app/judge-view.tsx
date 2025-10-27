@@ -1,9 +1,10 @@
 import SubmissionCard from "@/components/pages/judges-view/submissions-card";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import ConfirmModal from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
 import { useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useNavigation } from "expo-router";
 import * as React from "react";
 import { useEffect } from "react";
@@ -114,6 +115,21 @@ export default function JudgeViewScreen({
     });
   };
 
+  const skipPrompt = async () => {
+    const { data, error } = await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "skip_prompt",
+        payload: {
+          round_id: roundId,
+          user_id: meId,
+        },
+      },
+    });
+    if (!error) {
+      setPrompt(data.prompt.text);
+    }
+  };
+
   const confirmWinner = async () => {
     if (!selectedId) {
       setClickedConfirmNoWinner(true);
@@ -176,21 +192,18 @@ export default function JudgeViewScreen({
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
       {/* Header */}
-      <View style={[styles.header, { justifyContent: "center" }]}>
+      <View style={[styles.header]}>
         {/* <IconButton variant="ghost" onPress={() => router.back()}>
           <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
         </IconButton> */}
-        <Text style={[styles.title, { color: headerFg, textAlign: "center" }]}>
-          Judge
-        </Text>
-        {/* <View style={{ flexDirection: "row", gap: 8 }}>
-          <IconButton variant="ghost" onPress={onShuffle}>
+        <View style={{ width: 44 }} />
+        <Text style={[styles.title, { color: headerFg }]}>Judge</Text>
+        {/* <IconButton variant="ghost" onPress={onShuffle}>
             <Ionicons name="refresh-sharp" size={24} color="currentColor" />
-          </IconButton>
-          <IconButton variant="ghost" onPress={onSkip}>
-            <Ionicons name="play-forward" size={24} color="currentColor" />
-          </IconButton>
-        </View> */}
+          </IconButton> */}
+        <IconButton variant="ghost" onPress={skipPrompt}>
+          <Ionicons name="play-forward" size={24} color="currentColor" />
+        </IconButton>
       </View>
 
       {/* Prompt (Black Card) */}

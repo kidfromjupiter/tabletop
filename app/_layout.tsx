@@ -26,6 +26,7 @@ export default function RootLayout() {
   const addCard = useGameStore((state) => state.addCard);
   const me = useGameStore((state) => state.me);
   const roomCode = useGameStore((state) => state.settings.roomCode);
+  const round = useGameStore((state) => state.round); // --- IGNORE ---
   const setRoundData = useGameStore((state) => state.startRound);
   const setCards = useGameStore((state) => state.setCards);
   const setHand = useGameStore((state) => state.setHand);
@@ -37,6 +38,7 @@ export default function RootLayout() {
   const setPlayers = useGameStore((state) => state.setPlayers); // --- IGNORE ---
   const pickWinner = useGameStore((state) => state.pickWinner); // --- IGNORE ---
   const submitForPlayer = useGameStore((state) => state.submitForPlayer); // --- IGNORE ---
+  const updateSettings = useGameStore((state) => state.updateSettings); // --- IGNORE ---
 
   //const navigation = useNavigation();
   const router = useRouter();
@@ -59,7 +61,7 @@ export default function RootLayout() {
           `
       user_id, role, is_ready, score, joined_at,
       profiles ( display_name, avatar ),
-      rooms!inner ( code )
+      rooms!inner ( code, packs )
     `
         )
         .eq("rooms.code", roomCode) // filter on joined table
@@ -74,6 +76,14 @@ export default function RootLayout() {
           score: r.score,
         }));
         setPlayers(mapped);
+        const { data: packsData, error: packsError } = await supabase
+          .from("packs")
+          .select("*")
+          // @ts-ignore
+          .in("id", data[0].rooms.packs);
+        if (!packsError && packsData) {
+          updateSettings({ packs: packsData });
+        }
       }
     })();
     const supabaseChannel = supabase
@@ -165,6 +175,26 @@ export default function RootLayout() {
               );
             }
 
+            //TODO: add handler for skipping the prompt
+            if (payload.new.id != payload.old.id) {
+              // prompt was skipped
+              console.log("Prompt was skipped, clearing cards");
+              console.log("new payload:", payload.new);
+              console.log("old payload:", payload.old);
+              const { data, error } = await supabase
+                .from("prompt_cards")
+                .select("text")
+                .eq("id", payload.new.prompt_id)
+                .maybeSingle();
+              if (data && !error) {
+                setRound(
+                  payload.new.id,
+                  data.text,
+                  payload.new.pick_count,
+                  payload.new.judge_user_id
+                );
+              }
+            }
             //if (payload.new.status === "ended") {
             //  // round ended, navigate to round results
             //  router.replace("/round-results");
@@ -183,7 +213,7 @@ export default function RootLayout() {
         },
         async (payload: RealtimePostgresChangesPayload<any>) => {
           if (payload.table !== "room_players") return; // sometimes gets called for other tables?
-          console.log("Lobby player change payload:", payload);
+          //console.log("Lobby player change payload:", payload);
           const { data, error } = await supabase
             .from("profiles")
             .select("*")
@@ -232,6 +262,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (!me || !roundId || !roomCode) return;
     (async () => {
+      console.log("calling endpoints to get round data for player-view");
       const { data: roomState } = await supabase.functions.invoke("endpoints", {
         body: {
           action: "room_state",
@@ -278,6 +309,7 @@ export default function RootLayout() {
         roomState.round.judge_user_id,
         submissionsForStore
       );
+      updateSettings({ packs: roomState.room.packs }); // --- IGNORE ---
       setHand(roomState.my_hand);
       setCards([
         {
@@ -288,7 +320,7 @@ export default function RootLayout() {
         ...(submissionCards ? submissionCards : []),
       ]);
     })();
-  }, [me, roomCode, roundId]);
+  }, [me, roomCode, roundId, round?.prompt]);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -382,7 +414,6 @@ export default function RootLayout() {
                 roundLimit: 8,
                 scoreLimit: 10,
                 handSize: 10,
-                packs: ["Base", "Party"],
               },
             }}
           />
