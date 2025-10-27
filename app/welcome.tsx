@@ -255,7 +255,7 @@ export default function WelcomeScreen({
               title="Yes"
               onPress={() => {
                 if (gameResumeNextScreen) {
-                  router.replace(`/${gameResumeNextScreen}`);
+                  router.push(`/${gameResumeNextScreen}`);
                   setSheetOpen(false);
                 }
               }}
