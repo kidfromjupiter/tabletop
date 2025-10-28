@@ -24,7 +24,11 @@ export default function Footer({
   return (
     <View style={styles.footerBar}>
       {isHost ? (
-        <Button title="Start Game" onPress={onStart} disabled={!allReady} />
+        <Button
+          title={allReady ? "Start Game" : "Waiting on players..."}
+          onPress={onStart}
+          disabled={!allReady}
+        />
       ) : (
         <Button
           title={isReady ? "Unready" : "I'm Ready"}

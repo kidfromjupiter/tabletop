@@ -67,7 +67,7 @@ export default function PlayerCard({
           <Button
             title={item.isReady ? "Unready" : "I'm Ready"}
             size="sm"
-            variant={item.isReady ? "secondary" : "primary"}
+            variant={"ghost"}
             fullWidth={false}
             onPress={() => onToggleReady?.(item.id)}
           />
