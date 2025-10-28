@@ -203,30 +203,30 @@ export default function RootLayout() {
           }
 
           // 2. Prompt skipped (prompt_id changed)
-          if (rowOld && rowNew.prompt_id !== rowOld.prompt_id) {
-            console.log("Prompt was skipped, clearing cards");
-            console.log("new:", rowNew);
-            console.log("old:", rowOld);
+          // if (rowOld && rowNew.prompt_id !== rowOld.prompt_id) {
+          //   console.log("Prompt was skipped, clearing cards");
+          //   console.log("new:", rowNew);
+          //   console.log("old:", rowOld);
 
-            // We still need to look up the new prompt text
-            const { data, error } = await supabase
-              .from("prompt_cards")
-              .select("text")
-              .eq("id", rowNew.prompt_id)
-              .maybeSingle();
+          //   // We still need to look up the new prompt text
+          //   const { data, error } = await supabase
+          //     .from("prompt_cards")
+          //     .select("text")
+          //     .eq("id", rowNew.prompt_id)
+          //     .maybeSingle();
 
-            if (data && !error) {
-              setRound(
-                rowNew.id,
-                data.text,
-                rowNew.pick_count,
-                rowNew.judge_user_id
-              );
-            }
+          //   if (data && !error) {
+          //     setRound(
+          //       rowNew.id,
+          //       data.text,
+          //       rowNew.pick_count,
+          //       rowNew.judge_user_id
+          //     );
+          //   }
 
-            // You might also want to clear local submitted cards here,
-            // same as you currently do when skipping.
-          }
+          //   // You might also want to clear local submitted cards here,
+          //   // same as you currently do when skipping.
+          // }
 
           // If you later add round end state (e.g. ended_at just got set),
           // you can check that here and navigate to results view.
@@ -302,7 +302,17 @@ export default function RootLayout() {
           .maybeSingle();
 
         if (!error && data) {
+          console.log("set round again");
+          console.log(data);
           setRound(p.round_id, data.text, p.new_pick_count, p.judge_user_id);
+
+          const card: Item = {
+            id: p.new_prompt_id,
+            // @ts-ignore
+            text: data.text,
+            prompt: true,
+          };
+          setCards([card]);
         }
 
         // Clear any submitted cards in local UI if needed, etc.
