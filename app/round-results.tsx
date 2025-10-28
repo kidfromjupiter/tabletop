@@ -18,13 +18,6 @@ import { useRoundResults } from "@/hooks/useRoundResults";
 import supabase from "@/lib/supabase";
 import { router } from "expo-router";
 
-/**
- * RevealAndResultsScreens.tsx
- * Two screens:
- * 1) RevealSequenceScreen — dramatic reveal of all submissions, then winner highlight.
- * 2) RoundResultsScreen — round summary, points update, mini-scoreboard, next actions.
- */
-
 // ---------------- Types ----------------
 export type Combo = { id: string; texts: string[] };
 export type RevealItem = {
@@ -41,17 +34,11 @@ export type ScoreEntry = {
 };
 // =============== 2) RoundResultsScreen ===============
 export default function RoundResultsScreen({
-  scoreboard,
-  onNextRound,
   onSaveCombo,
   onShare,
-  onBackToLobby,
 }: {
-  scoreboard: ScoreEntry[]; // already sorted desc
-  onNextRound?: () => void;
   onSaveCombo?: (combo: Combo) => void;
   onShare?: (combo: Combo) => void;
-  onBackToLobby?: () => void;
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";

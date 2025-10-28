@@ -9,11 +9,9 @@ import "react-native-reanimated";
 import { Item } from "@/components/ui/repeating-card-stack/types";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Player, Submission, useGameStore } from "@/lib/state";
-import {
-  RealtimePostgresChangesPayload,
-  SupabaseClient,
-} from "@supabase/supabase-js";
+import { useRootLayout } from "@/hooks/useRootLayout";
+import { Player, Submission } from "@/lib/state";
+import { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -22,24 +20,23 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const roundId = useGameStore((state) => state.round?.roundId);
-  const addCard = useGameStore((state) => state.addCard);
-  const me = useGameStore((state) => state.me);
-  const roomCode = useGameStore((state) => state.settings.roomCode);
-  const round = useGameStore((state) => state.round); // --- IGNORE ---
-  const setRoundData = useGameStore((state) => state.startRound);
-  const setCards = useGameStore((state) => state.setCards);
-  const setHand = useGameStore((state) => state.setHand);
-
-  const setRound = useGameStore((state) => state.startRound); // --- IGNORE ---
-  const addPlayer = useGameStore((state) => state.addPlayer); // --- IGNORE ---
-  const updatePlayer = useGameStore((state) => state.updatePlayer); // --- IGNORE ---
-  const removePlayer = useGameStore((state) => state.removePlayer); // --- IGNORE ---
-  const setPlayers = useGameStore((state) => state.setPlayers); // --- IGNORE ---
-  const pickWinner = useGameStore((state) => state.pickWinner); // --- IGNORE ---
-  const submitForPlayer = useGameStore((state) => state.submitForPlayer); // --- IGNORE ---
-  //const updateSettings = useGameStore((state) => state.updateSettings); // --- IGNORE ---
-  const setPacks = useGameStore((state) => state.setPacks); // --- IGNORE ---
+  const {
+    roundId,
+    addCard,
+    me,
+    roomCode,
+    setRoundData,
+    setCards,
+    setHand,
+    setRound,
+    addPlayer,
+    updatePlayer,
+    removePlayer,
+    setPlayers,
+    pickWinner,
+    submitForPlayer,
+    setPacks,
+  } = useRootLayout();
 
   //const navigation = useNavigation();
   const router = useRouter();
@@ -87,141 +84,90 @@ export default function RootLayout() {
         }
       }
     })();
-    const supabaseChannel = supabase
-      .channel("schema-db-changes")
-      .on(
-        // listener for round submissions
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "round_submissions",
-          filter: `round_id=eq.${roundId || global.crypto.randomUUID()}`,
+    const roomChannel: RealtimeChannel = supabase
+      .channel(roomCode, {
+        config: {
+          private: false, // RLS/auth off for now
+          broadcast: { ack: true }, // request ack, optional
         },
-        async (payload: RealtimePostgresChangesPayload<any>) => {
-          if (payload.table !== "round_submissions") return; // sometimes gets called for other tables?
-          if (payload.eventType === "INSERT") {
-            const submission_id = payload.new.id;
-            const { data } = await supabase
-              .from("round_submissions")
-              .select(
-                `
-    id,
-    user_id,
-    profiles ( id, display_name ),
-    round_submission_items (
-      submission_id,
-      answer_cards ( text )
-    )
-  `
+      })
+
+      // INSERT events (round_submissions INSERT, room_players INSERT, rounds INSERT)
+      .on("broadcast", { event: "INSERT" }, async (msg: any) => {
+        console.log(msg);
+        console.log(msg.table);
+        const { table, new: rowNew } = msg.payload || {};
+        if (!table || !rowNew) return;
+
+        // --- round_submissions: someone just submitted cards
+        if (table === "round_submissions") {
+          const submission_id = rowNew.id;
+
+          // fetch the rich submission with player + cards
+          const { data } = await supabase
+            .from("round_submissions")
+            .select(
+              `
+              id,
+              user_id,
+              profiles ( id, display_name ),
+              round_submission_items (
+                submission_id,
+                answer_cards ( text )
               )
-              .eq("id", payload.new.id)
-              .single();
-            if (payload.new.user_id !== me?.id) {
-              // not my own card. so should show backside
-              const card: Item = {
-                id: submission_id,
-                // @ts-ignore
-                text: data?.profiles.display_name || "Anonymous",
-                backside: true,
-              };
-              addCard(card);
-            }
-            submitForPlayer({
+            `
+            )
+            .eq("id", submission_id)
+            .single();
+
+          // If it's not my own submission, show backside card with player's display name
+          if (rowNew.user_id !== me?.id) {
+            const card: Item = {
               id: submission_id,
               // @ts-ignore
-              texts: [data?.round_submission_items[0].answer_cards.text],
-              revealed: false,
-              playerId: data?.user_id,
-            });
+              text: data?.profiles.display_name || "Anonymous",
+              backside: true,
+            };
+            addCard(card);
           }
-        }
-      )
-      .on(
-        // round listener
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "rounds",
-          filter: `room_code=eq.${roomCode}`,
-        },
-        async (payload: RealtimePostgresChangesPayload<any>) => {
-          if (payload.table !== "rounds") return; // sometimes gets called for other tables?
-          if (payload.eventType === "INSERT") {
-            // created a new round, navigate to game view
-            const roundData = payload.new;
 
-            setRound(
-              roundData.id,
-              roundData.prompt,
-              roundData.pick_count,
-              roundData.judge_user_id
-            );
-            router.replace("/game-view");
-            console.log("New round created, navigating to game view");
-            console.log("payload:", payload);
-          }
-          if (payload.eventType === "UPDATE") {
-            if (payload.new.winning_submission_id) {
-              const { data } = await supabase
-                .from("round_submissions")
-                .select("profiles ( id)")
-                .eq("id", payload.new.winning_submission_id)
-                .single();
-              pickWinner(
-                payload.new.winning_submission_id,
-                // @ts-ignore
-                data?.profiles.id
-              );
-            }
-
-            if (payload.new.prompt_id != payload.old.prompt_id) {
-              // prompt was skipped
-              console.log("Prompt was skipped, clearing cards");
-              console.log("new payload:", payload.new);
-              console.log("old payload:", payload.old);
-              const { data, error } = await supabase
-                .from("prompt_cards")
-                .select("text")
-                .eq("id", payload.new.prompt_id)
-                .maybeSingle();
-              if (data && !error) {
-                setRound(
-                  payload.new.id,
-                  data.text,
-                  payload.new.pick_count,
-                  payload.new.judge_user_id
-                );
-              }
-            }
-            //if (payload.new.status === "ended") {
-            //  // round ended, navigate to round results
-            //  router.replace("/round-results");
-            //}
-          }
+          // Add the submitted card (front) to local round state
+          submitForPlayer({
+            id: submission_id,
+            // @ts-ignore
+            texts: [data?.round_submission_items[0].answer_cards.text],
+            revealed: false,
+            playerId: data?.user_id,
+          });
         }
-      )
-      .on(
-        // player listener
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "room_players",
-          filter: `room_code=eq.${roomCode}`,
-        },
-        async (payload: RealtimePostgresChangesPayload<any>) => {
-          if (payload.table !== "room_players") return; // sometimes gets called for other tables?
-          //console.log("Lobby player change payload:", payload);
+
+        // --- rounds: a brand new round got created
+        if (table === "rounds") {
+          // new round was started; navigate players into game view
+          const roundData = rowNew;
+          setRound(
+            roundData.id,
+            roundData.prompt, // NOTE: if you don't actually store prompt text inline on rounds,
+            // you may need to fetch it via prompt_id first.
+            roundData.pick_count,
+            roundData.judge_user_id
+          );
+
+          router.replace("/game-view");
+          console.log("New round created, navigating to game view");
+          console.log("INSERT rounds payload:", msg);
+        }
+
+        // --- room_players: someone joined the lobby
+        if (table === "room_players") {
+          const newPlayer = rowNew;
           const { data, error } = await supabase
             .from("profiles")
             .select("*")
-            .eq("id", payload.new.user_id)
+            .eq("id", newPlayer.user_id)
             .single();
 
-          if (payload.eventType === "INSERT") {
-            const newPlayer = payload.new;
+          if (!error && data) {
             addPlayer({
               id: newPlayer.user_id,
               name: data.display_name,
@@ -231,8 +177,74 @@ export default function RootLayout() {
               score: newPlayer.score,
             });
           }
-          if (payload.eventType === "UPDATE") {
-            const updatedPlayer = payload.new;
+        }
+      })
+
+      // UPDATE events (rounds UPDATE, room_players UPDATE, round_submissions UPDATE if you ever allow edits)
+      .on("broadcast", { event: "UPDATE" }, async (msg: any) => {
+        const { table, new: rowNew, old: rowOld } = msg.payload || {};
+        if (!table || !rowNew) return;
+
+        // --- rounds: score winner picked, prompt skipped, etc.
+        if (table === "rounds") {
+          // 1. Winner picked
+          if (rowNew.winning_submission_id) {
+            const { data } = await supabase
+              .from("round_submissions")
+              .select("profiles ( id )")
+              .eq("id", rowNew.winning_submission_id)
+              .single();
+
+            pickWinner(
+              rowNew.winning_submission_id,
+              // @ts-ignore
+              data?.profiles.id
+            );
+          }
+
+          // 2. Prompt skipped (prompt_id changed)
+          if (rowOld && rowNew.prompt_id !== rowOld.prompt_id) {
+            console.log("Prompt was skipped, clearing cards");
+            console.log("new:", rowNew);
+            console.log("old:", rowOld);
+
+            // We still need to look up the new prompt text
+            const { data, error } = await supabase
+              .from("prompt_cards")
+              .select("text")
+              .eq("id", rowNew.prompt_id)
+              .maybeSingle();
+
+            if (data && !error) {
+              setRound(
+                rowNew.id,
+                data.text,
+                rowNew.pick_count,
+                rowNew.judge_user_id
+              );
+            }
+
+            // You might also want to clear local submitted cards here,
+            // same as you currently do when skipping.
+          }
+
+          // If you later add round end state (e.g. ended_at just got set),
+          // you can check that here and navigate to results view.
+          // if (rowNew.ended_at && !rowOld.ended_at) {
+          //   router.replace("/round-results");
+          // }
+        }
+
+        // --- room_players: player readiness / score / host role changed
+        if (table === "room_players") {
+          const updatedPlayer = rowNew;
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", updatedPlayer.user_id)
+            .single();
+
+          if (!error && data) {
             updatePlayer(updatedPlayer.user_id, {
               name: data.display_name,
               isHost: updatedPlayer.role == "host",
@@ -241,21 +253,70 @@ export default function RootLayout() {
               score: updatedPlayer.score,
             });
           }
-          if (payload.eventType === "DELETE") {
-            const deletedPlayer = payload.old;
-            removePlayer(deletedPlayer.user_id);
-          }
         }
-      )
+
+        // --- round_submissions:
+        // If you ever reveal cards / flip state / etc. by updating,
+        // you could handle that here by checking table === "round_submissions"
+        // and using rowNew.revealed vs rowOld.revealed.
+      })
+
+      // DELETE events (room_players leave, round_submissions withdrawn, etc.)
+      .on("broadcast", { event: "DELETE" }, (msg: any) => {
+        const { table, old: rowOld } = msg.payload || {};
+        if (!table || !rowOld) return;
+
+        // --- room_players: player left lobby
+        if (table === "room_players") {
+          const deletedPlayer = rowOld;
+          removePlayer(deletedPlayer.user_id);
+        }
+
+        // --- round_submissions: if you ever allow someone to retract submission
+        // if (table === "round_submissions") {
+        //   removeSubmission(rowOld.id);
+        // }
+      })
+
+      // OPTIONAL: custom semantic events from triggers
+      // e.g. broadcast_round_prompt_skipped() calling realtime.send(..., 'PROMPT_SKIPPED', ...)
+      .on("broadcast", { event: "PROMPT_SKIPPED" }, async (msg: any) => {
+        // msg.payload was built in realtime.send()
+        // {
+        //   type: "PROMPT_SKIPPED",
+        //   round_id,
+        //   room_code,
+        //   judge_user_id,
+        //   old_prompt_id,
+        //   new_prompt_id,
+        //   new_pick_count
+        // }
+        const p = msg.payload;
+        console.log("PROMPT_SKIPPED event:", p);
+
+        // You probably still want to load the new prompt text by new_prompt_id:
+        const { data, error } = await supabase
+          .from("prompt_cards")
+          .select("text")
+          .eq("id", p.new_prompt_id)
+          .maybeSingle();
+
+        if (!error && data) {
+          setRound(p.round_id, data.text, p.new_pick_count, p.judge_user_id);
+        }
+
+        // Clear any submitted cards in local UI if needed, etc.
+      })
+
       .subscribe((status, error) => {
-        console.log("lobby supabase status:", status, error);
+        console.log("roomChannel status:", status, error);
       });
     console.log("roomcode lobby subbed:", roomCode);
 
     return () => {
       console.log("unsubbed");
-      supabaseChannel.unsubscribe();
-      supabase.removeChannel(supabaseChannel);
+      roomChannel.unsubscribe();
+      supabase.removeChannel(roomChannel);
     };
   }, [roundId, roomCode, me]);
   // player-view stuff
@@ -320,7 +381,7 @@ export default function RootLayout() {
         ...(submissionCards ? submissionCards : []),
       ]);
     })();
-  }, [me, roomCode, roundId, round?.prompt]);
+  }, [me, roomCode, roundId]);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
