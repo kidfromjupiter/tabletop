@@ -5,6 +5,7 @@ import supabase from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Updates from "expo-updates";
+import LottieView from "lottie-react-native";
 import * as React from "react";
 import {
   Image,
@@ -77,6 +78,12 @@ export default function WelcomeScreen({
           ToastAndroid.CENTER
         );
         await Updates.reloadAsync();
+      } else {
+        ToastAndroid.showWithGravity(
+          "You have the latest version!",
+          ToastAndroid.LONG,
+          ToastAndroid.CENTER
+        );
       }
     } catch (error) {
       // You can also add an alert() to see the error message in case of an error when fetching updates.
@@ -189,9 +196,16 @@ export default function WelcomeScreen({
               </View>
             </View>
           </Animated.View>
-
+          <LottieView
+            source={require("../assets/lottie/welcome.json")}
+            style={{ width: "100%", height: 500 }}
+            autoPlay
+            speed={0.6}
+            loop
+            resizeMode="cover"
+          />
           {/* Actions */}
-          <View style={{ gap: 12, width: "100%", marginTop: 20 }}>
+          <View style={{ gap: 12, width: "100%", marginTop: -80 }}>
             <Animated.View entering={FadeInDown.delay(60).springify()}>
               <Button
                 onPress={() => {
@@ -213,14 +227,6 @@ export default function WelcomeScreen({
                 }}
                 title="Join Game"
                 variant="secondary"
-              />
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(180).springify()}>
-              <Button
-                onPress={onPassAndPlay}
-                title="Pass & Play"
-                variant="ghost"
               />
             </Animated.View>
           </View>

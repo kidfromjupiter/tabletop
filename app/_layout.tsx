@@ -201,38 +201,6 @@ export default function RootLayout() {
               data?.profiles.id
             );
           }
-
-          // 2. Prompt skipped (prompt_id changed)
-          // if (rowOld && rowNew.prompt_id !== rowOld.prompt_id) {
-          //   console.log("Prompt was skipped, clearing cards");
-          //   console.log("new:", rowNew);
-          //   console.log("old:", rowOld);
-
-          //   // We still need to look up the new prompt text
-          //   const { data, error } = await supabase
-          //     .from("prompt_cards")
-          //     .select("text")
-          //     .eq("id", rowNew.prompt_id)
-          //     .maybeSingle();
-
-          //   if (data && !error) {
-          //     setRound(
-          //       rowNew.id,
-          //       data.text,
-          //       rowNew.pick_count,
-          //       rowNew.judge_user_id
-          //     );
-          //   }
-
-          //   // You might also want to clear local submitted cards here,
-          //   // same as you currently do when skipping.
-          // }
-
-          // If you later add round end state (e.g. ended_at just got set),
-          // you can check that here and navigate to results view.
-          // if (rowNew.ended_at && !rowOld.ended_at) {
-          //   router.replace("/round-results");
-          // }
         }
 
         // --- room_players: player readiness / score / host role changed
@@ -281,16 +249,6 @@ export default function RootLayout() {
       // OPTIONAL: custom semantic events from triggers
       // e.g. broadcast_round_prompt_skipped() calling realtime.send(..., 'PROMPT_SKIPPED', ...)
       .on("broadcast", { event: "PROMPT_SKIPPED" }, async (msg: any) => {
-        // msg.payload was built in realtime.send()
-        // {
-        //   type: "PROMPT_SKIPPED",
-        //   round_id,
-        //   room_code,
-        //   judge_user_id,
-        //   old_prompt_id,
-        //   new_prompt_id,
-        //   new_pick_count
-        // }
         const p = msg.payload;
         console.log("PROMPT_SKIPPED event:", p);
 
