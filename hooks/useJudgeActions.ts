@@ -28,7 +28,7 @@ export function useJudgeActions() {
     if (!error) {
       setMe(null);
       setSettings({ roomCode: "" });
-      router.replace("/welcome");
+      router.dismissTo("/welcome");
     }
   };
 
@@ -79,7 +79,7 @@ export function useJudgeActions() {
         },
       },
     });
-    router.replace("/round-results");
+    router.navigate("/round-results");
   };
 
   const fetchRoomState = async () => {

@@ -22,7 +22,7 @@ export function useLobbyActions() {
     if (!error) {
       setMe(null);
       setSettings({ roomCode: "" });
-      router.replace("/welcome");
+      router.dismissTo("/welcome");
     }
   };
 

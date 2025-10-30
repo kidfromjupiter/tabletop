@@ -1,5 +1,5 @@
 // src/audio/SoundEffectsProvider.tsx
-import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
+import { AudioPlayer, setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import React, {
   createContext,
   ReactNode,
@@ -10,7 +10,7 @@ import React, {
   useState,
 } from "react";
 
-type SfxName = "tap" | "success" | "error";
+type SfxName = "card-flip" | "card-draw";
 
 type SoundEffectsContextValue = {
   play: (name: SfxName) => void;
@@ -27,9 +27,13 @@ export function SoundEffectsProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabled] = useState(true);
 
   // preload your SFX clips
-  const tapPlayer = useAudioPlayer(require("../../assets/sfx/tap.mp3"));
-  const successPlayer = useAudioPlayer(require("../../assets/sfx/success.mp3"));
-  const errorPlayer = useAudioPlayer(require("../../assets/sfx/error.mp3"));
+  // const tapPlayer = useAudioPlayer(require("../../assets/sfx/tap.mp3"));
+  // const successPlayer = useAudioPlayer(require("../../assets/sfx/success.mp3"));
+  // const errorPlayer = useAudioPlayer(require("../../assets/sfx/error.mp3"));
+  const cardSound = useAudioPlayer(
+    require("../assets/audio/paper-landing.wav")
+  );
+  const card1 = useAudioPlayer(require("../assets/audio/card-2.wav"));
 
   // Configure global audio mode once (iOS silent switch, mixing, etc.)
   useEffect(() => {
@@ -48,7 +52,7 @@ export function SoundEffectsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // helper to actually trigger a sound
-  const triggerPlayer = useCallback((player: any) => {
+  const triggerPlayer = useCallback((player: AudioPlayer) => {
     // expo-audio keeps the playhead at the end after finishing.
     // So always rewind to 0 before replay.
     player.seekTo(0);
@@ -60,20 +64,26 @@ export function SoundEffectsProvider({ children }: { children: ReactNode }) {
       if (!enabled) return;
 
       switch (name) {
-        case "tap":
-          triggerPlayer(tapPlayer);
+        case "card-flip":
+          triggerPlayer(cardSound);
           break;
-        case "success":
-          triggerPlayer(successPlayer);
+        case "card-draw":
+          triggerPlayer(card1);
           break;
-        case "error":
-          triggerPlayer(errorPlayer);
-          break;
+        // case "tap":
+        //   triggerPlayer(tapPlayer);
+        //   break;
+        // case "success":
+        //   triggerPlayer(successPlayer);
+        //   break;
+        // case "error":
+        //   triggerPlayer(errorPlayer);
+        //   break;
         default:
           break;
       }
     },
-    [enabled, tapPlayer, successPlayer, errorPlayer, triggerPlayer]
+    [enabled, cardSound, triggerPlayer]
   );
 
   const toggleEnabled = useCallback(() => {

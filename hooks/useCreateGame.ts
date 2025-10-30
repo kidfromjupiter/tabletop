@@ -65,7 +65,7 @@ export function useCreateGame() {
     });
 
     updateSettings(settings);
-    router.push("/lobby");
+    router.navigate("/lobby");
   }
 
   return { handleStart };

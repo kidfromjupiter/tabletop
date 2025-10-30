@@ -117,7 +117,7 @@ export default function JoinGameScreen({
     if (!error) {
       toPhase("lobby");
       joinRoom(c.toUpperCase());
-      router.push("/lobby");
+      router.navigate("/lobby");
     } else {
       console.log("Join error:", error);
       console.log("Full response:", response);

@@ -154,7 +154,7 @@ export default function RootLayout() {
             roundData.judge_user_id
           );
 
-          router.replace("/game-view");
+          router.navigate("/game-view");
           console.log("New round created, navigating to game view");
           console.log("INSERT rounds payload:", msg);
         }

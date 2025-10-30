@@ -132,7 +132,7 @@ export default function RoundResultsScreen({
                 },
               },
             });
-            router.push("/lobby");
+            router.dismissTo("/lobby");
           }}
         />
       </View>

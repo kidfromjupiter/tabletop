@@ -163,7 +163,7 @@ export default function RevealSequenceScreen({
       <View style={styles.footer}>
         <Button
           title="Continue"
-          onPress={() => router.push("/round-results")}
+          onPress={() => router.navigate("/round-results")}
         />
       </View>
     </SafeAreaView>

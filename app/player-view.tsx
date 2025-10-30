@@ -20,12 +20,14 @@ import { Progress } from "@/components/ui/progress";
 import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { StoreState, useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
+import { useSoundEffects } from "@/providers/sfx-provider";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { router, useNavigation } from "expo-router";
 import Animated, {
   cancelAnimation,
   FadeIn,
   FadeOut,
+  Keyframe,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -66,6 +68,7 @@ export default function PlayerView() {
   const judgeId = useGameStore((state) => state.round?.judgeId);
   const ty = useSharedValue(0);
   const scale = useSharedValue(1);
+  const soundFxPlayer = useSoundEffects();
   const [updatedSubmissionUserId, setUpdatedSubmissionUserId] = useState("");
   useEffect(() => {
     // scale animation when submissions change
@@ -210,6 +213,13 @@ export default function PlayerView() {
       transform: [{ rotate: `${rot.value}deg` }],
     };
   });
+  const playFlip = React.useCallback(
+    (name: string) => {
+      soundFxPlayer.play("card-flip"); // your own player / expo-av wrapper
+    },
+    [soundFxPlayer]
+  );
+
   return (
     <GestureHandlerRootView>
       <SafeAreaView style={[styles.container]}>
@@ -243,7 +253,7 @@ export default function PlayerView() {
                     onPress={() => {
                       if (submitted) {
                         // Navigate to results
-                        router.replace("/reveal-sequence");
+                        router.navigate("/reveal-sequence");
                       }
                     }}
                     fullWidth={false}
@@ -323,9 +333,39 @@ export default function PlayerView() {
             {/* Opponent hand (optional) */}
           </View>
 
-          <View style={{ flex: 2, width: "100%", justifyContent: "center" }}>
+          <Animated.View
+            style={{ flex: 2, width: "100%", justifyContent: "center" }}
+            entering={
+              new Keyframe({
+                0: {
+                  opacity: 0,
+                  transform: [
+                    { translateY: 80 },
+                    { rotate: "-60deg" },
+                    { scale: 2 },
+                  ],
+                },
+                60: {
+                  opacity: 1,
+                  transform: [
+                    { translateY: -10 },
+                    { rotate: "5deg" },
+                    { scale: 1.05 },
+                  ],
+                },
+                100: {
+                  opacity: 1,
+                  transform: [
+                    { translateY: 0 },
+                    { rotate: "0deg" },
+                    { scale: 1 },
+                  ],
+                },
+              })
+            }
+          >
             <RepeatingCardStack data={cards} cardHeight={300} />
-          </View>
+          </Animated.View>
 
           <View
             style={{
@@ -350,7 +390,7 @@ export default function PlayerView() {
             visible={confirmVisible}
             onCancel={() => setConfirmVisible(false)}
             onConfirm={() => {
-              router.push("/welcome");
+              router.dismissTo("/welcome");
             }}
           />
         </ImageBackground>

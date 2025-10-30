@@ -1,3 +1,5 @@
+import { useSoundEffects } from "@/providers/sfx-provider";
+import React from "react";
 import { StyleSheet, Text } from "react-native";
 import {
   Directions,
@@ -55,6 +57,14 @@ export function ScrollableCard({
     gestureSuccess.value = result;
     //return result;
   };
+  const sfxPlayer = useSoundEffects();
+
+  const playFlip = React.useCallback(
+    (name: string) => {
+      sfxPlayer.play("card-flip"); // your own player / expo-av wrapper
+    },
+    [sfxPlayer]
+  );
   useAnimatedReaction(
     () => gestureSuccess.value,
     (success) => {
@@ -81,6 +91,7 @@ export function ScrollableCard({
       console.log("END FLING");
 
       runOnJS(asyncCallback)(id);
+      runOnJS(playFlip)("card-draw");
     });
 
   const animatedStyles = useAnimatedStyle(() => {
