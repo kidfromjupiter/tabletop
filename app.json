@@ -1,7 +1,7 @@
 {
   "expo": {
     "jsEngine": "hermes",
-    "name": "tabletop",
+    "name": "Tabletop",
     "slug": "tabletop",
     "version": "1.2.0",
     "orientation": "portrait",
@@ -15,8 +15,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/images/foreground-android.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -34,7 +34,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/foreground-android.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",

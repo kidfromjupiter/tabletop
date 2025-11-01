@@ -36,7 +36,7 @@ export default function WelcomeScreen({
   onJoinGame,
   onPassAndPlay,
   onHowToPlay,
-  appName = "Tabletop Party",
+  appName = "Tabletop",
   tagline = "A terrible game for terribly funny people.",
   logoSource,
 }: {
