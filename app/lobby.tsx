@@ -6,6 +6,7 @@ import Rules from "@/components/pages/lobby/rules";
 import ConfirmModal from "@/components/ui/modal";
 import { useLobbyActions } from "@/hooks/useLobbyActions";
 import { Player, useGameStore } from "@/lib/state";
+import supabase from "@/lib/supabase";
 import * as Clipboard from "expo-clipboard";
 import { useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -113,6 +114,19 @@ export default function LobbyScreen({
     return null;
   }
 
+  const kickPlayer = async (playerId: string) => {
+    const { error } = await supabase.functions.invoke("endpoints", {
+      body: {
+        action: "kick_player",
+        payload: {
+          user_id: meId,
+          room_code: settings.roomCode,
+          target_user_id: playerId,
+        },
+      },
+    });
+  };
+
   function renderPlayer({ item }: { item: Player }) {
     return (
       <PlayerCard
@@ -122,7 +136,7 @@ export default function LobbyScreen({
         isHost={isHost}
         onToggleReady={onToggleReady}
         onPromote={onPromote}
-        onKick={onKick}
+        onKick={kickPlayer}
       />
     );
   }

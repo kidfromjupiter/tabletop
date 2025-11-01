@@ -15,6 +15,7 @@ import { SoundEffectsProvider } from "@/providers/sfx-provider";
 import { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
+import { ToastAndroid } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function RootLayout() {
@@ -38,6 +39,7 @@ export default function RootLayout() {
     submitForPlayer,
     setPacks,
     updateSettings,
+    leaveRoom,
   } = useRootLayout();
 
   //const navigation = useNavigation();
@@ -105,6 +107,21 @@ export default function RootLayout() {
       .on("broadcast", { event: "GAME_FINISHED" }, (msg: any) => {
         console.log("GAME_FINISHED event received:", msg);
         router.navigate("/winner-screen");
+      })
+
+      .on("broadcast", { event: "KICK_PLAYER" }, (msg: any) => {
+        const p = msg.payload;
+        console.log("KICK_PLAYER event:", p);
+        if (p.user_id === me?.id) {
+          // I got kicked!
+          leaveRoom();
+          router.replace("/welcome");
+          ToastAndroid.showWithGravity(
+            "You have been kicked from the room.",
+            ToastAndroid.LONG,
+            ToastAndroid.CENTER
+          );
+        }
       })
 
       // INSERT events (round_submissions INSERT, room_players INSERT, rounds INSERT)

@@ -17,12 +17,14 @@ export function useRootLayout() {
   const submitForPlayer = useGameStore((state) => state.submitForPlayer);
   const setPacks = useGameStore((state) => state.setPacks);
   const updateSettings = useGameStore((state) => state.updateSettings);
+  const leaveRoom = useGameStore((state) => state.leaveRoom);
 
   return {
     roundId,
     addCard,
     me,
     roomCode,
+    leaveRoom,
     setRoundData,
     setCards,
     setHand,

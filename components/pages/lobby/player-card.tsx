@@ -76,9 +76,9 @@ export default function PlayerCard({
         {/* Host tools per-player */}
         {isHost && !item.isHost ? (
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <IconButton variant="ghost" onPress={() => onPromote?.(item.id)}>
+            {/* <IconButton variant="ghost" onPress={() => onPromote?.(item.id)}>
               ⭐
-            </IconButton>
+            </IconButton> */}
             <IconButton variant="ghost" onPress={() => onKick?.(item.id)}>
               ✕
             </IconButton>
