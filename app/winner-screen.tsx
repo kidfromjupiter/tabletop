@@ -130,13 +130,9 @@ function Medal({ delay = 0 }) {
 }
 
 // Winner Screen ------------------------------------------------------
-export default function WinnerScreen({
-  onPlayAgain,
-  onExit,
-  victorySound,
-  confettiSource,
-}: WinnerScreenProps) {
+export default function WinnerScreen() {
   const ring = useSharedValue(0);
+  const leaveRoom = useGameStore((state) => state.leaveRoom);
 
   const players = useGameStore((state) =>
     state.players.sort((a, b) => {
@@ -259,6 +255,7 @@ export default function WinnerScreen({
         <Button
           title="Exit"
           onPress={() => {
+            leaveRoom();
             router.dismissTo("/welcome");
           }}
         />

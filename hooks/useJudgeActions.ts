@@ -1,6 +1,6 @@
 import { useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 import { useState } from "react";
 import { ToastAndroid } from "react-native";
 
@@ -11,6 +11,7 @@ export function useJudgeActions() {
   const setMe = useGameStore((state) => state.setMe);
   const setSettings = useGameStore((state) => state.updateSettings);
   const submitForPlayer = useGameStore((state) => state.submitForPlayer);
+  const pathname = usePathname();
 
   const [prompt, setPrompt] = useState("Loading prompt...");
   const [expectedSubmissions, setExpectedSubmissions] = useState(0);
@@ -79,7 +80,10 @@ export function useJudgeActions() {
         },
       },
     });
-    router.navigate("/round-results");
+    if (pathname !== "/winner-screen") {
+      // winner screen is routed to automatically from the listener. So we avoid double navigation.
+      router.navigate("/winner-screen");
+    }
   };
 
   const fetchRoomState = async () => {

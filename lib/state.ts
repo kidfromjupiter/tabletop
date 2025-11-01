@@ -90,6 +90,8 @@ export type StoreState = {
   ) => void;
   joinRoom: (roomCode: string) => void;
   leaveRoom: () => void;
+  /** leaveRoom but keep local identity (`me`) and any local preferences */
+  leaveRoomKeepMe: () => void;
 
   // settings
   updateSettings: (patch: Partial<GameSettings>) => void;
@@ -150,6 +152,7 @@ const initialState: Omit<
   | "createRoom"
   | "joinRoom"
   | "leaveRoom"
+  | "leaveRoomKeepMe"
   | "updateSettings"
   | "toggleFamilyMode"
   | "setPacks"
@@ -229,6 +232,22 @@ export const useGameStore = create<StoreState>()(
         },
 
         leaveRoom: () => set({ ...initialState, phase: "welcome" }),
+
+        leaveRoomKeepMe: () =>
+          set((s) => ({
+            // preserve identity
+            me: s.me,
+            // reset room-related state
+            isHost: false,
+            phase: "welcome",
+            settings: { ...initialSettings },
+            players: [],
+            round: null,
+            submittedCardStack: [],
+            hand: [],
+            busy: false,
+            error: null,
+          })),
 
         updateSettings: (patch) =>
           set((s) => ({

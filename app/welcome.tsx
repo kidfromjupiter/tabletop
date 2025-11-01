@@ -10,7 +10,6 @@ import * as React from "react";
 import {
   Dimensions,
   Image,
-  Pressable,
   StyleSheet,
   Text,
   ToastAndroid,
@@ -243,12 +242,12 @@ export default function WelcomeScreen({
               gap: 16,
             }}
           >
-            <Pressable
+            {/* <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/winner-screen")}
             >
               <Text style={styles.link}>winner</Text>
-            </Pressable>
+            </Pressable> */}
             {/* <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/judge-view")}

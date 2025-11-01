@@ -37,6 +37,7 @@ export default function RootLayout() {
     pickWinner,
     submitForPlayer,
     setPacks,
+    updateSettings,
   } = useRootLayout();
 
   //const navigation = useNavigation();
@@ -60,7 +61,7 @@ export default function RootLayout() {
           `
       user_id, role, is_ready, score, joined_at,
       profiles ( display_name, avatar ),
-      rooms!inner ( code, packs )
+      rooms!inner ( code, packs,round_limit, score_limit, hand_size)
     `
         )
         .eq("rooms.code", roomCode) // filter on joined table
@@ -75,6 +76,15 @@ export default function RootLayout() {
           score: r.score,
         }));
         setPlayers(mapped);
+        console.log(data[0].rooms);
+        updateSettings({
+          // @ts-ignore
+          roundLimit: data[0].rooms.round_limit,
+          // @ts-ignore
+          scoreLimit: data[0].rooms.score_limit,
+          // @ts-ignore
+          handSize: data[0].rooms.hand_size,
+        });
         const { data: packsData, error: packsError } = await supabase
           .from("packs")
           .select("*")
@@ -94,6 +104,7 @@ export default function RootLayout() {
       })
       .on("broadcast", { event: "GAME_FINISHED" }, (msg: any) => {
         console.log("GAME_FINISHED event received:", msg);
+        router.navigate("/winner-screen");
       })
 
       // INSERT events (round_submissions INSERT, room_players INSERT, rounds INSERT)

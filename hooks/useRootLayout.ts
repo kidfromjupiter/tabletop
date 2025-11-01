@@ -16,6 +16,7 @@ export function useRootLayout() {
   const pickWinner = useGameStore((state) => state.pickWinner);
   const submitForPlayer = useGameStore((state) => state.submitForPlayer);
   const setPacks = useGameStore((state) => state.setPacks);
+  const updateSettings = useGameStore((state) => state.updateSettings);
 
   return {
     roundId,
@@ -33,5 +34,6 @@ export function useRootLayout() {
     pickWinner,
     submitForPlayer,
     setPacks,
+    updateSettings,
   };
 }

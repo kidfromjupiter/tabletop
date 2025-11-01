@@ -8,6 +8,7 @@ export function useLobbyActions() {
   const settings = useGameStore((state) => state.settings);
   const setMe = useGameStore((state) => state.setMe);
   const setSettings = useGameStore((state) => state.updateSettings);
+  const leaveRoomStore = useGameStore((state) => state.leaveRoom);
 
   const leaveRoom = async () => {
     const { error } = await supabase.functions.invoke("endpoints", {
@@ -20,8 +21,7 @@ export function useLobbyActions() {
       },
     });
     if (!error) {
-      setMe(null);
-      setSettings({ roomCode: "" });
+      leaveRoomStore();
       router.dismissTo("/welcome");
     }
   };
