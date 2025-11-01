@@ -1,11 +1,12 @@
-import RoundResultsHeader from "@/components/pages/round-results/round-results-header";
+import { Button } from "@/components/ui/button";
+import Header from "@/components/ui/header";
 import { useGameStore } from "@/lib/state";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import React, { useEffect } from "react";
 import {
+  FlatList,
   Image,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -37,12 +38,16 @@ export type WinnerScreenProps = {
 function LottieConfetti({ source }: { source?: any }) {
   if (!source) return null;
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { zIndex: Infinity }]}
+    >
       <LottieView
         source={source}
         autoPlay
-        loop
-        style={StyleSheet.absoluteFill}
+        loop={false}
+        style={[StyleSheet.absoluteFill]}
+        resizeMode="cover"
       />
     </View>
   );
@@ -124,21 +129,6 @@ function Medal({ delay = 0 }) {
   );
 }
 
-// Sound --------------------------------------------------------------
-// async function playVictory(soundAsset?: any) {
-//   if (!soundAsset) return;
-//   try {
-//     const { sound } = await Audio.Sound.createAsync(soundAsset, {
-//       shouldPlay: true,
-//       volume: 0.9,
-//     });
-//     // auto-unload after finish
-//     sound.setOnPlaybackStatusUpdate((status: any) => {
-//       if (status.isLoaded && status.didJustFinish) sound.unloadAsync();
-//     });
-//   } catch {}
-// }
-
 // Winner Screen ------------------------------------------------------
 export default function WinnerScreen({
   onPlayAgain,
@@ -184,15 +174,16 @@ export default function WinnerScreen({
     <SafeAreaView
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
-      <LottieConfetti source={confettiSource} />
+      <LottieConfetti
+        source={require("../assets/lottie/confetti on transparent background.json")}
+      />
 
-      <RoundResultsHeader isDark={isDark} />
-
+      <Header title="Winner Winner!" isDark={isDark} />
       <Animated.View
         entering={FadeInDown.duration(500)}
         style={[
           styles.winnerCard,
-          { backgroundColor: isDark ? "#151515" : "#FFFFFF" },
+          { backgroundColor: isDark ? "#151515" : "#FFFFFF", zIndex: 0 },
           ringStyle,
         ]}
       >
@@ -236,8 +227,10 @@ export default function WinnerScreen({
           { backgroundColor: isDark ? "#151515" : "#FFFFFF" },
         ]}
       >
-        {players.length > 0 &&
-          players.map((p, i) => (
+        <FlatList
+          data={players}
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          renderItem={({ item: p, index: i }) => (
             <View
               style={[
                 styles.scoreRow,
@@ -258,23 +251,17 @@ export default function WinnerScreen({
                 {p.score}
               </Text>
             </View>
-          ))}
+          )}
+        />
       </Animated.View>
 
       <View style={styles.footer}>
-        {onPlayAgain && (
-          <Pressable
-            onPress={onPlayAgain}
-            style={[styles.btn, styles.btnPrimary]}
-          >
-            <Text style={styles.btnText}>Play Again</Text>
-          </Pressable>
-        )}
-        {onExit && (
-          <Pressable onPress={onExit} style={[styles.btn, styles.btnGhost]}>
-            <Text style={[styles.btnText, { color: "#111827" }]}>Exit</Text>
-          </Pressable>
-        )}
+        <Button
+          title="Exit"
+          onPress={() => {
+            router.dismissTo("/welcome");
+          }}
+        />
       </View>
     </SafeAreaView>
   );
@@ -282,7 +269,7 @@ export default function WinnerScreen({
 
 // Styles -------------------------------------------------------------
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, backgroundColor: "red" },
   container: {
     flex: 1,
     backgroundColor: "#0B1221",
@@ -300,6 +287,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 0 },
     elevation: 12,
+    margin: 22,
   },
   rowAvatar: { fontSize: 22 },
   avatar: {
