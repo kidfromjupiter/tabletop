@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Toggle } from "@/components/ui/toggle";
 import { useGameStore } from "@/lib/state";
 import React from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
@@ -97,7 +96,7 @@ export default function HostRoomSection({
         </Pressable> */}
       </View>
 
-      <View style={styles.rowBetween}>
+      {/* <View style={styles.rowBetween}>
         <Toggle
           label="Private room"
           value={isPrivate}
@@ -110,7 +109,7 @@ export default function HostRoomSection({
           onToggle={() => updateSettings({ familyMode: !familyMode })}
           isDark={isDark}
         />
-      </View>
+      </View> */}
     </View>
   );
 }

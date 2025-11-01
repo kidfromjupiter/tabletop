@@ -12,10 +12,8 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CreateGameScreen({
-  onBack,
   defaultName = "",
 }: {
-  onBack?: () => void;
   defaultName?: string;
 }) {
   const scheme = useColorScheme();

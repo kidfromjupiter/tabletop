@@ -56,14 +56,14 @@ export default function RoomCard({
         />
       </View>
       <View style={[styles.roomMetaRow]}>
-        <Tag>{settings.isPrivate ? "Private" : "Public"}</Tag>
-        <Text style={[styles.dot, { color: isDark ? "#5A5A5A" : "#AAA" }]}>
+        {/* <Tag>{settings.isPrivate ? "Private" : "Public"}</Tag> */}
+        {/* <Text style={[styles.dot, { color: isDark ? "#5A5A5A" : "#AAA" }]}>
           •
-        </Text>
-        <Tag>{settings.familyMode ? "Family Mode" : "Anything Goes"}</Tag>
-        <Text style={[styles.dot, { color: isDark ? "#5A5A5A" : "#AAA" }]}>
+        </Text> */}
+        {/* <Tag>{settings.familyMode ? "Family Mode" : "Anything Goes"}</Tag> */}
+        {/* <Text style={[styles.dot, { color: isDark ? "#5A5A5A" : "#AAA" }]}>
           •
-        </Text>
+        </Text> */}
         <Tag>{settings.packs.length} packs</Tag>
       </View>
     </Animated.View>

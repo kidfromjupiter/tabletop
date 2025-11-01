@@ -11,7 +11,6 @@ import { useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   FlatList,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -158,7 +157,7 @@ export default function LobbyScreen({
             <Text style={[styles.sectionTitle, { color: headerFg }]}>
               Players ({players.length})
             </Text>
-            {isHost && (
+            {/* {isHost && (
               <Pressable onPress={onShuffleJudges}>
                 <Text
                   style={[
@@ -169,7 +168,7 @@ export default function LobbyScreen({
                   Shuffle judge order
                 </Text>
               </Pressable>
-            )}
+            )} */}
           </View>
           <FlatList
             data={players}

@@ -1,6 +1,6 @@
 import { GameSettings } from "@/lib/state";
 import React from "react";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { PackTag } from "./tags";
 
@@ -36,7 +36,7 @@ export default function Rules({
         <Text style={styles.ruleKey}>Hand size</Text>
         <Text style={styles.ruleVal}>{settings.handSize}</Text>
       </View>
-      <View style={[styles.ruleRow, { alignItems: "center" }]}>
+      {/* <View style={[styles.ruleRow, { alignItems: "center" }]}>
         <Text style={styles.ruleKey}>Family mode</Text>
         <Switch
           value={settings.familyMode}
@@ -48,14 +48,14 @@ export default function Rules({
           thumbColor={isDark ? "#0B0B0B" : "#FFF"}
           ios_backgroundColor={isDark ? "#2A2A2A" : "#E5E7EB"}
         />
-      </View>
+      </View> */}
 
       <View
         style={{
           flexDirection: "row",
           flexWrap: "wrap",
           gap: 8,
-          marginTop: 8,
+          marginTop: 20,
         }}
       >
         {settings.packs.map((p) => (
