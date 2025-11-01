@@ -4,28 +4,40 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+type Props = {
+  title?: string;
+  isDark?: boolean;
+  left?: React.ReactNode;
+  right?: React.ReactNode;
+  /** show the default back button when true (defaults to true) */
+  showBack?: boolean;
+};
+
 export default function Header({
   title,
-  isDark,
-}: {
-  title: string;
-  isDark: boolean;
-}) {
+  isDark = false,
+  left,
+  right,
+  showBack = true,
+}: Props) {
   const router = useRouter();
   const headerFg = isDark ? "#fff" : "#0B0B0B";
 
   return (
     <View style={styles.header}>
-      <IconButton
-        variant="ghost"
-        onPress={() => {
-          router.back();
-        }}
-      >
-        <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
-      </IconButton>
+      {left ? (
+        left
+      ) : showBack ? (
+        <IconButton variant="ghost" onPress={() => router.back()}>
+          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
+        </IconButton>
+      ) : (
+        <View style={{ width: 44 }} />
+      )}
+
       <Text style={[styles.title, { color: headerFg }]}>{title}</Text>
-      <View style={{ width: 44 }} />
+
+      {right ? right : <View style={{ width: 44 }} />}
     </View>
   );
 }

@@ -21,8 +21,8 @@ export default function RulesSection({ isDark }: { isDark: boolean }) {
       <Counter
         label="Round limit (0 = unlimited)"
         value={roundLimit}
-        setValue={() => {
-          updateSettings({ roundLimit });
+        setValue={(number) => {
+          updateSettings({ roundLimit: number });
         }}
         min={0}
         max={30}
@@ -31,8 +31,8 @@ export default function RulesSection({ isDark }: { isDark: boolean }) {
       <Counter
         label="Score limit (0 = unlimited)"
         value={scoreLimit}
-        setValue={() => {
-          updateSettings({ scoreLimit });
+        setValue={(number) => {
+          updateSettings({ scoreLimit: number });
         }}
         min={0}
         max={30}
@@ -41,7 +41,7 @@ export default function RulesSection({ isDark }: { isDark: boolean }) {
       <Counter
         label="Hand size"
         value={handSize}
-        setValue={() => updateSettings({ handSize })}
+        setValue={(number) => updateSettings({ handSize: number })}
         min={5}
         max={15}
         isDark={isDark}

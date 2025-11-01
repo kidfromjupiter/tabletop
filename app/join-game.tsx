@@ -1,7 +1,7 @@
-import { Button, IconButton } from "@/components/ui/button"; // use latest buttons file name
+import { Button } from "@/components/ui/button"; // use latest buttons file name
+import Header from "@/components/ui/header";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
-import { Ionicons } from "@expo/vector-icons";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "expo-router";
 import * as React from "react";
@@ -156,20 +156,7 @@ export default function JoinGameScreen({
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
       {/* Header */}
-      <View style={styles.header}>
-        <IconButton
-          variant="ghost"
-          onPress={() => {
-            router.back();
-          }}
-        >
-          <Ionicons name="arrow-back-outline" size={24} color="currentColor" />
-        </IconButton>
-        <Text style={[styles.title, { color: isDark ? "#fff" : "#0B0B0B" }]}>
-          Join Game
-        </Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <Header title="Join Game" isDark={isDark} />
 
       {/* Card */}
       <Animated.View

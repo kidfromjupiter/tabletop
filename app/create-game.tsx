@@ -1,8 +1,8 @@
-import Header from "@/components/pages/create-game/header";
 import HostRoomSection from "@/components/pages/create-game/host-room-section";
 import PacksSection from "@/components/pages/create-game/packs-section";
 import RulesSection from "@/components/pages/create-game/rules-section";
 import { Button } from "@/components/ui/button";
+import Header from "@/components/ui/header";
 import { useCreateGame } from "@/hooks/useCreateGame";
 import { Pack, useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";

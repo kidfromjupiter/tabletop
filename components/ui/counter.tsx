@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { Button } from "./button";
 
 export default function Counter({
   label,
@@ -27,37 +28,25 @@ export default function Counter({
         {label}
       </Text>
       <View style={styles.rowBetween}>
-        <Pressable
+        <Button
           onPress={dec}
-          style={[
-            styles.stepBtn,
-            { backgroundColor: isDark ? "#2A2A2A" : "#EFEFEF" },
-          ]}
-        >
-          <Text
-            style={[styles.stepText, { color: isDark ? "#EDEDED" : "#222" }]}
-          >
-            −
-          </Text>
-        </Pressable>
+          title="-"
+          fullWidth={false}
+          size="md"
+          variant="secondary"
+        />
         <Text
           style={[styles.counterValue, { color: isDark ? "#fff" : "#111" }]}
         >
           {value}
         </Text>
-        <Pressable
+        <Button
           onPress={inc}
-          style={[
-            styles.stepBtn,
-            { backgroundColor: isDark ? "#2A2A2A" : "#EFEFEF" },
-          ]}
-        >
-          <Text
-            style={[styles.stepText, { color: isDark ? "#EDEDED" : "#222" }]}
-          >
-            +
-          </Text>
-        </Pressable>
+          title="+"
+          fullWidth={false}
+          size="md"
+          variant="secondary"
+        />
       </View>
     </View>
   );

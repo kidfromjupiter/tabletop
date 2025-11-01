@@ -92,6 +92,9 @@ export default function RootLayout() {
           broadcast: { ack: true }, // request ack, optional
         },
       })
+      .on("broadcast", { event: "GAME_FINISHED" }, (msg: any) => {
+        console.log("GAME_FINISHED event received:", msg);
+      })
 
       // INSERT events (round_submissions INSERT, room_players INSERT, rounds INSERT)
       .on("broadcast", { event: "INSERT" }, async (msg: any) => {
@@ -380,6 +383,7 @@ export default function RootLayout() {
                 playerId: "p1",
               }}
             />
+            <Stack.Screen name="winner-screen" />
             <Stack.Screen
               name="round-results"
               options={{ title: "Round Results" }}
