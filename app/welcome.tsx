@@ -1,6 +1,7 @@
 import { Button, IconButton } from "@/components/ui/button";
 import { PaperModal } from "@/components/ui/paper-modal";
 import { useGameStore } from "@/lib/state";
+import supabase from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Updates from "expo-updates";
@@ -100,39 +101,39 @@ export default function WelcomeScreen({
       bob.value = withSpring(1, { stiffness: 60, damping: 8 });
     }, [bob])
   );
-  // React.useEffect(() => {
-  //   console.log(`Running this with ${room_code}, ${me_id}`);
-  //   if (room_code && me_id) {
-  //     console.log(`calling backend this with ${room_code}, ${me_id}`);
-  //     (async () => {
-  //       const { data: roomState } = await supabase.functions.invoke(
-  //         "endpoints",
-  //         {
-  //           body: {
-  //             action: "room_state",
-  //             payload: {
-  //               room_code: room_code,
-  //               user_id: me_id,
-  //             },
-  //           },
-  //         }
-  //       );
-  //       if (!roomState.ended_at && !roomState.round) {
-  //         // room hasn't ended. game is still going. No round tho
-  //         setGameResumeNextScreen("lobby");
-  //         setSheetOpen(true);
-  //       } else {
-  //         if (roomState.round.judge_user_id === me_id) {
-  //           setGameResumeNextScreen("judge-view");
-  //           setSheetOpen(true);
-  //         } else {
-  //           setGameResumeNextScreen("player-view");
-  //           setSheetOpen(true);
-  //         }
-  //       }
-  //     })();
-  //   }
-  // }, []);
+  React.useEffect(() => {
+    console.log(`Running this with ${room_code}, ${me_id}`);
+    if (room_code && me_id) {
+      console.log(`calling backend this with ${room_code}, ${me_id}`);
+      (async () => {
+        const { data: roomState } = await supabase.functions.invoke(
+          "endpoints",
+          {
+            body: {
+              action: "room_state",
+              payload: {
+                room_code: room_code,
+                user_id: me_id,
+              },
+            },
+          }
+        );
+        if (!roomState.ended_at && !roomState.round) {
+          // room hasn't ended. game is still going. No round tho
+          setGameResumeNextScreen("lobby");
+          setSheetOpen(true);
+        } else {
+          if (roomState.round.judge_user_id === me_id) {
+            setGameResumeNextScreen("judge-view");
+            setSheetOpen(true);
+          } else {
+            setGameResumeNextScreen("player-view");
+            setSheetOpen(true);
+          }
+        }
+      })();
+    }
+  }, []);
 
   const bobStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: bob.value * -4 }],

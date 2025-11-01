@@ -163,7 +163,9 @@ export function ScrollableCard({
       <Animated.View
         style={[styles.card, style, animatedStyles, { borderWidth: 2 }]}
       >
-        <Text style={styles.title}>{data.text}</Text>
+        <Text adjustsFontSizeToFit minimumFontScale={0.7} style={styles.title}>
+          {data.text}
+        </Text>
       </Animated.View>
     </GestureDetector>
   );

@@ -2,6 +2,7 @@ import { IconButton } from "@/components/ui/button";
 import SharedHeader from "@/components/ui/header";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
+import { View } from "react-native";
 
 export default function JudgeHeader({
   isDark,
@@ -14,7 +15,7 @@ export default function JudgeHeader({
     <SharedHeader
       title="Judge"
       isDark={isDark}
-      left={(<div style={{ width: 44 }} />) as any}
+      left={(<View style={{ width: 44 }} />) as any}
       right={
         <IconButton variant="ghost" onPress={skipPrompt}>
           <Ionicons name="play-forward" size={24} color="currentColor" />

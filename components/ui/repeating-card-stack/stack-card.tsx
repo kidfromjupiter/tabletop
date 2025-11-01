@@ -63,6 +63,8 @@ export const StackCard = React.memo((props: StackCardProps) => {
             ]}
           >
             <Text
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
               style={[
                 styles.title,
                 { color: props.item.prompt ? "#fff" : "#000" },
