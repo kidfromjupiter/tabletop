@@ -82,7 +82,7 @@ export function useJudgeActions() {
     });
     if (pathname !== "/winner-screen") {
       // winner screen is routed to automatically from the listener. So we avoid double navigation.
-      router.navigate("/winner-screen");
+      router.navigate("/round-results");
     }
   };
 
