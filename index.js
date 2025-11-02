@@ -1,6 +1,6 @@
-if (__DEV__) {
-  require("./ReactotronConfig");
-}
+// if (__DEV__) {
+//   require("./ReactotronConfig");
+// }
 
 import { registerRootComponent } from "expo";
 import { ExpoRoot } from "expo-router";

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   ImageBackground,
+  Platform,
   StyleSheet,
   Text,
   ToastAndroid,
@@ -18,6 +19,7 @@ import SelfHand from "@/components/ui/hand-flatlist";
 import ConfirmModal from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
 import RepeatingCardStack from "@/components/ui/repeating-card-stack";
+import { ScrollableCard } from "@/components/ui/scrollable-card";
 import { StoreState, useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
 import { useSoundEffects } from "@/providers/sfx-provider";
@@ -235,7 +237,7 @@ export default function PlayerView() {
             resizeMode: "cover",
           }}
         >
-          <View pointerEvents="box-none" style={[hudStyles.wrap]}>
+          <View style={[hudStyles.wrap]}>
             {/* Row 1: round / turn / submissions */}
             <View style={hudStyles.row}>
               <View style={hudStyles.pill}>
@@ -329,62 +331,97 @@ export default function PlayerView() {
             </ScrollView>
           </View>
 
-          <View style={{ flex: 1, width: "100%" }}>
+          <View style={{ flex: 1, width: "100%" }} pointerEvents="none">
             {/* Opponent hand (optional) */}
           </View>
 
           <Animated.View
-            style={{ flex: 2, width: "100%", justifyContent: "center" }}
+            style={[
+              {
+                flex: 2,
+                width: "100%",
+                justifyContent: "center",
+              },
+            ]}
             entering={
-              new Keyframe({
-                0: {
-                  opacity: 0,
-                  transform: [
-                    { translateY: 80 },
-                    { rotate: "-60deg" },
-                    { scale: 2 },
-                  ],
-                },
-                60: {
-                  opacity: 1,
-                  transform: [
-                    { translateY: -10 },
-                    { rotate: "5deg" },
-                    { scale: 1.05 },
-                  ],
-                },
-                100: {
-                  opacity: 1,
-                  transform: [
-                    { translateY: 0 },
-                    { rotate: "0deg" },
-                    { scale: 1 },
-                  ],
-                },
-              })
+              Platform.OS !== "web"
+                ? new Keyframe({
+                    0: {
+                      opacity: 0,
+                      transform: [
+                        { translateY: 80 },
+                        { rotate: "-60deg" },
+                        { scale: 2 },
+                      ],
+                    },
+                    60: {
+                      opacity: 1,
+                      transform: [
+                        { translateY: -10 },
+                        { rotate: "5deg" },
+                        { scale: 1.05 },
+                      ],
+                    },
+                    100: {
+                      opacity: 1,
+                      transform: [
+                        { translateY: 0 },
+                        { rotate: "0deg" },
+                        { scale: 1 },
+                      ],
+                    },
+                  })
+                : undefined
             }
           >
             <RepeatingCardStack data={cards} cardHeight={300} />
           </Animated.View>
 
-          <View
-            style={{
-              flex: 2,
-              width: "100%",
-              overflow: "visible",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Animated.View>
-              <SelfHand
-                gap={CARD_GAP}
-                hand={hand}
-                removeById={removeById} // Directly pass the function
-                card_width={CARD_WIDTH}
-              />
-            </Animated.View>
-          </View>
+          {Platform.OS == "web" ? (
+            <ScrollView
+              horizontal
+              style={{ width: "100%", flex: 2 }}
+              contentContainerStyle={{
+                gap: CARD_GAP,
+                overflow: "visible",
+              }}
+            >
+              {hand.map((item, index) => (
+                <ScrollableCard
+                  data={item}
+                  style={{
+                    width: "100%",
+                    overflow: "visible",
+                  }}
+                  rotation={35}
+                  yRange={20}
+                  index={index}
+                  id={item.id}
+                  totalWidth={CARD_WIDTH + CARD_GAP}
+                  callback={removeById}
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <View
+              style={{
+                flex: 2,
+                width: "100%",
+                overflow: "visible",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Animated.View>
+                <SelfHand
+                  gap={CARD_GAP}
+                  hand={hand}
+                  removeById={removeById} // Directly pass the function
+                  card_width={CARD_WIDTH}
+                />
+              </Animated.View>
+            </View>
+          )}
 
           <ConfirmModal
             visible={confirmVisible}

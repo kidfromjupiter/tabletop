@@ -1,6 +1,6 @@
 import { useSoundEffects } from "@/providers/sfx-provider";
 import React from "react";
-import { StyleSheet, Text } from "react-native";
+import { Platform, StyleSheet, Text } from "react-native";
 import {
   Directions,
   Gesture,
@@ -21,6 +21,8 @@ import { Item } from "./repeating-card-stack/types";
 
 const PRESS_DURATION = 200;
 
+const native = Gesture.Native();
+
 export function ScrollableCard({
   data,
   style,
@@ -39,7 +41,7 @@ export function ScrollableCard({
   data: Item;
   displayedRangeFromCenter?: number;
   style?: any;
-  scrollX: SharedValue<number>;
+  scrollX?: SharedValue<number>;
   index: number;
   id: string;
   callback: (id: string) => Promise<boolean>;
@@ -96,6 +98,7 @@ export function ScrollableCard({
 
   const animatedStyles = useAnimatedStyle(() => {
     let rot;
+    if (!scrollX) return {};
     if (!inverted) {
       initialY.value = interpolate(
         scrollX.value / totalWidth,
@@ -139,6 +142,12 @@ export function ScrollableCard({
         Extrapolation.EXTEND
       );
     }
+    if (Platform.OS === "web") {
+      return {
+        transform: [{ scale: scale.value }],
+      };
+      //  rot = -rot; // because web is flipped?
+    }
     return {
       zIndex: gestureActive.value ? 100 : 0,
       position: gestureActive.value ? "absolute" : "relative",
@@ -158,8 +167,36 @@ export function ScrollableCard({
       ],
     };
   });
+  if (Platform.OS === "web") {
+    return (
+      <Animated.View
+        onPointerDown={() => {
+          scale.value = withTiming(0.7, { duration: PRESS_DURATION });
+          console.log("POINTER DOWN");
+        }}
+        onPointerUp={() => {
+          scale.value = withTiming(1, { duration: PRESS_DURATION });
+          console.log("POINTER UP");
+          asyncCallback(id);
+        }}
+        onPointerCancel={() => {
+          scale.value = withTiming(1, { duration: PRESS_DURATION });
+        }}
+        style={[
+          styles.card,
+          style,
+          animatedStyles,
+          { borderWidth: 2, width: "50vw" },
+        ]}
+      >
+        <Text adjustsFontSizeToFit minimumFontScale={0.7} style={styles.title}>
+          {data.text}
+        </Text>
+      </Animated.View>
+    );
+  }
   return (
-    <GestureDetector gesture={flingGesture}>
+    <GestureDetector gesture={Gesture.Simultaneous(native, flingGesture)}>
       <Animated.View
         style={[styles.card, style, animatedStyles, { borderWidth: 2 }]}
       >
@@ -173,7 +210,7 @@ export function ScrollableCard({
 
 const styles = StyleSheet.create({
   card: {
-    aspectRatio: 3 / 4,
+    //aspectRatio: 3 / 4,
     backgroundColor: "white",
     borderRadius: 16,
     elevation: 4,

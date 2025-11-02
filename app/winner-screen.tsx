@@ -1,8 +1,8 @@
+import LottieView from "@/components/compat-shims/lottie";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/ui/header";
 import { useGameStore } from "@/lib/state";
 import { useRouter } from "expo-router";
-import LottieView from "lottie-react-native";
 import React, { useEffect } from "react";
 import {
   FlatList,

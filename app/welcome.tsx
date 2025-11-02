@@ -1,3 +1,4 @@
+import LottieView from "@/components/compat-shims/lottie";
 import { Button, IconButton } from "@/components/ui/button";
 import { PaperModal } from "@/components/ui/paper-modal";
 import { useGameStore } from "@/lib/state";
@@ -5,11 +6,11 @@ import supabase from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Updates from "expo-updates";
-import LottieView from "lottie-react-native";
 import * as React from "react";
 import {
   Dimensions,
   Image,
+  Platform,
   StyleSheet,
   Text,
   ToastAndroid,
@@ -100,9 +101,9 @@ export default function WelcomeScreen({
       bob.value = withSpring(1, { stiffness: 60, damping: 8 });
     }, [bob])
   );
+  const [ranRoomStatusCheck, setRanRoomStatusCheck] = React.useState(false);
   React.useEffect(() => {
-    console.log(`Running this with ${room_code}, ${me_id}`);
-    if (room_code && me_id) {
+    if (room_code && me_id && !ranRoomStatusCheck) {
       console.log(`calling backend this with ${room_code}, ${me_id}`);
       (async () => {
         const { data: roomState } = await supabase.functions.invoke(
@@ -121,6 +122,7 @@ export default function WelcomeScreen({
           // room hasn't ended. game is still going. No round tho
           setGameResumeNextScreen("lobby");
           setSheetOpen(true);
+          console.log("Hasn't ended Going to lobby");
         } else {
           if (roomState.round.judge_user_id === me_id) {
             setGameResumeNextScreen("judge-view");
@@ -130,9 +132,10 @@ export default function WelcomeScreen({
             setSheetOpen(true);
           }
         }
+        setRanRoomStatusCheck(true);
       })();
     }
-  }, []);
+  }, [room_code, me_id]);
 
   const bobStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: bob.value * -4 }],
@@ -150,7 +153,11 @@ export default function WelcomeScreen({
             style={styles.headerRow}
           >
             <Text
-              style={[styles.title, { color: isDark ? "#fff" : "#0B0B0B" }]}
+              style={[
+                styles.title,
+                { color: isDark ? "#fff" : "#0B0B0B" },
+                { marginTop: Platform.OS == "web" ? 20 : 0 },
+              ]}
             >
               {appName}
             </Text>

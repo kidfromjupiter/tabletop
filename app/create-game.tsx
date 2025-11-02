@@ -7,7 +7,7 @@ import { useCreateGame } from "@/hooks/useCreateGame";
 import { Pack, useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
 import * as React from "react";
-import { ScrollView, StyleSheet, Text, useColorScheme } from "react-native";
+import { ScrollView, StyleSheet, useColorScheme } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -82,11 +82,6 @@ export default function CreateGameScreen({
             variant="primary"
             onPress={async () => await handleStart(hostName)} // Pass hostName explicitly
           />
-          <Text
-            style={[styles.hint, { color: isDark ? "#9CA3AF" : "#6B7280" }]}
-          >
-            You can change packs and rules later in Host Controls.
-          </Text>
         </Animated.View>
       </ScrollView>
     </SafeAreaView>

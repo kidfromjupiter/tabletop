@@ -1,6 +1,6 @@
 import React from "react";
-import { Dimensions } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
+import { Dimensions, FlatList } from "react-native";
+//import { FlatList } from "react-native-gesture-handler";
 import Animated, {
   Easing,
   FadeOut,
@@ -91,7 +91,7 @@ export default function SelfHand({
               .stiffness(500)
               .mass(0.4)}
             style={{ width: card_width }}
-            entering={FlipFlyUp.delay(index * STAGGER_MS)}
+            //entering={FlipFlyUp.delay(index * STAGGER_MS)}
             // entering={FadeInUp.duration(DURATION_MS)
             //   .delay(index * STAGGER_MS)
             //   .withInitialValues({
