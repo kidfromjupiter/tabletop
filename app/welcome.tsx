@@ -3,6 +3,7 @@ import { Button, IconButton } from "@/components/ui/button";
 import { PaperModal } from "@/components/ui/paper-modal";
 import { useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
+import { showToast } from "@/lib/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Updates from "expo-updates";
@@ -13,7 +14,6 @@ import {
   Platform,
   StyleSheet,
   Text,
-  ToastAndroid,
   useColorScheme,
   View,
 } from "react-native";
@@ -67,25 +67,13 @@ export default function WelcomeScreen({
       const update = await Updates.checkForUpdateAsync();
 
       if (update.isAvailable) {
-        ToastAndroid.showWithGravity(
-          "Update available! Downloading...",
-          ToastAndroid.LONG,
-          ToastAndroid.CENTER
-        );
+        showToast(" Update available! Downloading...");
         await Updates.fetchUpdateAsync();
 
-        ToastAndroid.showWithGravity(
-          "Reloading to apply update...",
-          ToastAndroid.LONG,
-          ToastAndroid.CENTER
-        );
+        showToast("Reloading to apply update...");
         await Updates.reloadAsync();
       } else {
-        ToastAndroid.showWithGravity(
-          "You have the latest version!",
-          ToastAndroid.LONG,
-          ToastAndroid.CENTER
-        );
+        showToast("You have the latest version!");
       }
     } catch (error) {
       // You can also add an alert() to see the error message in case of an error when fetching updates.

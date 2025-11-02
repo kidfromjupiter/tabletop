@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     //paddingBottom: Platform.select({ ios: 32, android: 24 }),
   },
   card: {
-    //maxWidth: 640,
+    maxWidth: 750,
     width: "100%",
     borderRadius: 20,
     // "Paper" look

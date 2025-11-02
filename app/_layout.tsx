@@ -6,17 +6,145 @@ import {
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
+import MobileStage from "@/components/mobile-stage";
 import { Item } from "@/components/ui/repeating-card-stack/types";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRootLayout } from "@/hooks/useRootLayout";
 import { Player, Submission } from "@/lib/state";
+import { showToast, ToastProvider } from "@/lib/toast";
 import { SoundEffectsProvider } from "@/providers/sfx-provider";
 import { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { ToastAndroid } from "react-native";
+import { ColorSchemeName, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+function AppContent({ colorScheme }: { colorScheme: ColorSchemeName }) {
+  return (
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <SafeAreaProvider>
+        <ToastProvider>
+          <SoundEffectsProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                headerStyle: { backgroundColor: "#F6F6F8" },
+                headerTintColor: "#111",
+                freezeOnBlur: true,
+              }}
+            >
+              <Stack.Screen
+                name="welcome"
+                options={{ title: "Welcome" }}
+                initialParams={{
+                  appName: "Tabletop Party",
+                  tagline: "A terrible game for terribly funny people.",
+                }}
+              />
+              <Stack.Screen
+                name="player-view"
+                options={{ title: "Game" }}
+                initialParams={{
+                  roomCode: "ABCD5",
+                  playerId: "p1",
+                }}
+              />
+              <Stack.Screen name="winner-screen" />
+              <Stack.Screen
+                name="round-results"
+                options={{ title: "Round Results" }}
+              />
+              <Stack.Screen
+                name="reveal-sequence"
+                options={{ title: "Reveal Sequence" }}
+                initialParams={{
+                  prompt: "Why can't I sleep at night?",
+                  items: [
+                    {
+                      id: "a",
+                      texts: ["A romantic candlelit dinner with homicide."],
+                    },
+                    { id: "b", texts: ["Bees?"] },
+                    {
+                      id: "c",
+                      texts: ["A mime having a stroke."],
+                      isWinner: true,
+                    },
+                  ],
+                }}
+              />
+              <Stack.Screen
+                name="judge-view"
+                options={{ title: "Judge View" }}
+                initialParams={{
+                  prompt: "Why can't I sleep at night?",
+                  pickCount: 1,
+                  submissions: [
+                    {
+                      id: "a",
+                      texts: ["A romantic candlelit dinner with homicide."],
+                      revealed: false,
+                    },
+                    { id: "b", texts: ["Bees?"], revealed: true },
+                    {
+                      id: "c",
+                      texts: ["A mime having a stroke."],
+                      revealed: false,
+                    },
+                    {
+                      id: "d",
+                      texts: ["The miracle of childbirth."],
+                      revealed: true,
+                    },
+                  ],
+                  totalPlayers: 5,
+                  timeLeftSec: 20,
+                  timeTotalSec: 60,
+                }}
+              />
+              <Stack.Screen
+                name="lobby"
+                options={{ title: "Lobby" }}
+                initialParams={{
+                  isHost: true,
+                  players: [
+                    { id: "1", name: "Kavi", isHost: true, isReady: true },
+                    { id: "2", name: "Alex", isReady: false },
+                  ],
+                  meId: "1",
+                  settings: {
+                    roomCode: "ABCD5",
+                    isPrivate: true,
+                    familyMode: false,
+                    roundLimit: 8,
+                    scoreLimit: 10,
+                    handSize: 10,
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="create-game"
+                options={{ title: "Create Game" }}
+                initialParams={{ defaultName: "" }}
+              />
+              <Stack.Screen
+                name="join-game"
+                options={{ title: "Join Game" }}
+                initialParams={{
+                  defaultName: "Alex",
+                  lastSession: { roomCode: "ABCD5", name: "Alex" },
+                }}
+              />
+            </Stack>
+
+            <StatusBar style="auto" />
+          </SoundEffectsProvider>
+        </ToastProvider>
+      </SafeAreaProvider>
+    </ThemeProvider>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -48,13 +176,8 @@ export default function RootLayout() {
 
   // lobby stuff
 
-  // TODO: move away from supabase postgres changes to supabase realtime functions
-  // Right now we're using a random UUID in place of roundId to avoid subscription issues
-
   useEffect(() => {
-    console.log("useEffect lobby sub roundId, roomCode:", roundId, roomCode);
     if (!roomCode) return;
-    console.log("Room code exists, setting up lobby subscriptions");
     (async () => {
       setPlayers([]); // reset on mount
       // Pull current state (join profiles for richer UI)
@@ -117,11 +240,7 @@ export default function RootLayout() {
           // I got kicked!
           leaveRoom();
           router.replace("/welcome");
-          ToastAndroid.showWithGravity(
-            "You have been kicked from the room.",
-            ToastAndroid.LONG,
-            ToastAndroid.CENTER
-          );
+          showToast(" You have been kicked from the room.");
         }
       })
 
@@ -387,125 +506,13 @@ export default function RootLayout() {
     })();
   }, [me, roomCode, roundId]);
 
-  return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <SafeAreaProvider>
-        <SoundEffectsProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              headerStyle: { backgroundColor: "#F6F6F8" },
-              headerTintColor: "#111",
-              freezeOnBlur: true,
-            }}
-          >
-            <Stack.Screen
-              name="welcome"
-              options={{ title: "Welcome" }}
-              initialParams={{
-                appName: "Tabletop Party",
-                tagline: "A terrible game for terribly funny people.",
-              }}
-            />
-            <Stack.Screen
-              name="player-view"
-              options={{ title: "Game" }}
-              initialParams={{
-                roomCode: "ABCD5",
-                playerId: "p1",
-              }}
-            />
-            <Stack.Screen name="winner-screen" />
-            <Stack.Screen
-              name="round-results"
-              options={{ title: "Round Results" }}
-            />
-            <Stack.Screen
-              name="reveal-sequence"
-              options={{ title: "Reveal Sequence" }}
-              initialParams={{
-                prompt: "Why can't I sleep at night?",
-                items: [
-                  {
-                    id: "a",
-                    texts: ["A romantic candlelit dinner with homicide."],
-                  },
-                  { id: "b", texts: ["Bees?"] },
-                  {
-                    id: "c",
-                    texts: ["A mime having a stroke."],
-                    isWinner: true,
-                  },
-                ],
-              }}
-            />
-            <Stack.Screen
-              name="judge-view"
-              options={{ title: "Judge View" }}
-              initialParams={{
-                prompt: "Why can't I sleep at night?",
-                pickCount: 1,
-                submissions: [
-                  {
-                    id: "a",
-                    texts: ["A romantic candlelit dinner with homicide."],
-                    revealed: false,
-                  },
-                  { id: "b", texts: ["Bees?"], revealed: true },
-                  {
-                    id: "c",
-                    texts: ["A mime having a stroke."],
-                    revealed: false,
-                  },
-                  {
-                    id: "d",
-                    texts: ["The miracle of childbirth."],
-                    revealed: true,
-                  },
-                ],
-                totalPlayers: 5,
-                timeLeftSec: 20,
-                timeTotalSec: 60,
-              }}
-            />
-            <Stack.Screen
-              name="lobby"
-              options={{ title: "Lobby" }}
-              initialParams={{
-                isHost: true,
-                players: [
-                  { id: "1", name: "Kavi", isHost: true, isReady: true },
-                  { id: "2", name: "Alex", isReady: false },
-                ],
-                meId: "1",
-                settings: {
-                  roomCode: "ABCD5",
-                  isPrivate: true,
-                  familyMode: false,
-                  roundLimit: 8,
-                  scoreLimit: 10,
-                  handSize: 10,
-                },
-              }}
-            />
-            <Stack.Screen
-              name="create-game"
-              options={{ title: "Create Game" }}
-              initialParams={{ defaultName: "" }}
-            />
-            <Stack.Screen
-              name="join-game"
-              options={{ title: "Join Game" }}
-              initialParams={{
-                defaultName: "Alex",
-                lastSession: { roomCode: "ABCD5", name: "Alex" },
-              }}
-            />
-          </Stack>
-
-          <StatusBar style="auto" />
-        </SoundEffectsProvider>
-      </SafeAreaProvider>
-    </ThemeProvider>
-  );
+  if (Platform.OS == "web") {
+    return (
+      <MobileStage>
+        <AppContent colorScheme={colorScheme} />
+      </MobileStage>
+    );
+  } else {
+    return <AppContent colorScheme={colorScheme} />;
+  }
 }

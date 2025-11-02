@@ -60,6 +60,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#121212",
     padding: 20,
+    maxWidth: 600,
   },
   modalTitle: {
     fontSize: 20,

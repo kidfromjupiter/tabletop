@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"; // use latest buttons file name
 import Header from "@/components/ui/header";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useGameStore } from "@/lib/state";
+import { showToast } from "@/lib/toast";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "expo-router";
 import * as React from "react";
@@ -11,7 +12,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  ToastAndroid,
   useColorScheme,
   View,
 } from "react-native";
@@ -122,11 +122,7 @@ export default function JoinGameScreen({
       console.log("Join error:", error);
       console.log("Full response:", response);
       if (response?.status === 404) {
-        ToastAndroid.showWithGravity(
-          "Room not found or has already ended",
-          ToastAndroid.SHORT,
-          ToastAndroid.CENTER
-        );
+        showToast("Room not found or has already ended");
       }
     }
   }

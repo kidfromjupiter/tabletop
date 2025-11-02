@@ -1,4 +1,5 @@
 import { useSoundEffects } from "@/providers/sfx-provider";
+import { useStage } from "@/providers/stage-provider";
 import React from "react";
 import { Platform, StyleSheet, Text } from "react-native";
 import {
@@ -167,9 +168,17 @@ export function ScrollableCard({
       ],
     };
   });
+
   if (Platform.OS === "web") {
+    const { stageW, stageH } = useStage();
     return (
       <Animated.View
+        onPointerEnter={() => {
+          scale.value = withTiming(1.3, { duration: PRESS_DURATION });
+        }}
+        onPointerLeave={() => {
+          scale.value = withTiming(1, { duration: PRESS_DURATION });
+        }}
         onPointerDown={() => {
           scale.value = withTiming(0.7, { duration: PRESS_DURATION });
           console.log("POINTER DOWN");
@@ -186,7 +195,7 @@ export function ScrollableCard({
           styles.card,
           style,
           animatedStyles,
-          { borderWidth: 2, width: "50vw" },
+          { borderWidth: 2, width: stageW / 2, maxHeight: stageH * 0.3 },
         ]}
       >
         <Text adjustsFontSizeToFit minimumFontScale={0.7} style={styles.title}>

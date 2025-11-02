@@ -5,7 +5,6 @@ import {
   Platform,
   StyleSheet,
   Text,
-  ToastAndroid,
   View,
 } from "react-native";
 import {
@@ -22,6 +21,7 @@ import RepeatingCardStack from "@/components/ui/repeating-card-stack";
 import { ScrollableCard } from "@/components/ui/scrollable-card";
 import { StoreState, useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
+import { showToast } from "@/lib/toast";
 import { useSoundEffects } from "@/providers/sfx-provider";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { router, useNavigation } from "expo-router";
@@ -188,11 +188,7 @@ export default function PlayerView() {
       }
     );
     if (response?.status === 405) {
-      ToastAndroid.showWithGravity(
-        "Already submitted a card for this round!",
-        ToastAndroid.SHORT,
-        ToastAndroid.CENTER
-      );
+      showToast("Already submitted a card for this round.");
     }
     if (!error) {
       setSubmitted(true);
@@ -385,6 +381,7 @@ export default function PlayerView() {
                 gap: CARD_GAP,
                 overflow: "visible",
               }}
+              showsHorizontalScrollIndicator={false}
             >
               {hand.map((item, index) => (
                 <ScrollableCard

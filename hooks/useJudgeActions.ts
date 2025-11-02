@@ -1,8 +1,8 @@
 import { useGameStore } from "@/lib/state";
 import supabase from "@/lib/supabase";
+import { showToast } from "@/lib/toast";
 import { router, usePathname } from "expo-router";
 import { useState } from "react";
-import { ToastAndroid } from "react-native";
 
 export function useJudgeActions() {
   const meId = useGameStore((state) => state.me?.id);
@@ -63,11 +63,7 @@ export function useJudgeActions() {
 
   const confirmWinner = async (selectedId: string | null) => {
     if (!selectedId) {
-      ToastAndroid.showWithGravity(
-        "Please select a winner before confirming.",
-        ToastAndroid.SHORT,
-        ToastAndroid.CENTER
-      );
+      showToast("Please select a winner before confirming.");
       return;
     }
     await supabase.functions.invoke("endpoints", {
