@@ -10,7 +10,7 @@ import { Item } from "@/components/ui/repeating-card-stack/types";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/constants/supabase";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useRootLayout } from "@/hooks/useRootLayout";
-import { Player, Submission } from "@/lib/state";
+import { Player, Submission, useGameStore } from "@/lib/state";
 import { SoundEffectsProvider } from "@/providers/sfx-provider";
 import { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { Stack, useRouter } from "expo-router";
@@ -40,10 +40,14 @@ export default function RootLayout() {
     setPacks,
     updateSettings,
     leaveRoom,
+    revealSubmission,
   } = useRootLayout();
 
   //const navigation = useNavigation();
   const router = useRouter();
+  const submissions: Submission[] = useGameStore(
+    (state) => state.round?.submissions || []
+  );
 
   // lobby stuff
 
@@ -253,6 +257,9 @@ export default function RootLayout() {
               score: updatedPlayer.score,
             });
           }
+        }
+        if (table == "round_submissions") {
+          revealSubmission(rowNew.id);
         }
 
         // --- round_submissions:
