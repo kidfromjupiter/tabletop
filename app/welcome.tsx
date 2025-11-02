@@ -39,7 +39,6 @@ export default function WelcomeScreen({
   onHowToPlay,
   appName = "Tabletop",
   tagline = "A terrible game for terribly funny people.",
-  logoSource,
 }: {
   onCreateGame?: () => void;
   onJoinGame?: () => void;
@@ -47,7 +46,6 @@ export default function WelcomeScreen({
   onHowToPlay?: () => void;
   appName?: string;
   tagline?: string;
-  logoSource?: any; // ImageSourcePropType
 }) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
@@ -167,17 +165,11 @@ export default function WelcomeScreen({
                   bobStyle,
                 ]}
               >
-                {logoSource ? (
-                  <Image
-                    source={logoSource}
-                    resizeMode="contain"
-                    style={{ width: 40, height: 40 }}
-                  />
-                ) : (
-                  <Text accessibilityLabel="logo" style={{ fontSize: 28 }}>
-                    🃏
-                  </Text>
-                )}
+                <Image
+                  source={require("../assets/images/icon.png")}
+                  resizeMode="contain"
+                  style={{ width: 40, height: 40 }}
+                />
               </Animated.View>
               <View style={{ flex: 1 }}>
                 <Text
