@@ -210,7 +210,7 @@ export function ScrollableCard({
 
 const styles = StyleSheet.create({
   card: {
-    //aspectRatio: 3 / 4,
+    aspectRatio: 3 / 4,
     backgroundColor: "white",
     borderRadius: 16,
     elevation: 4,
