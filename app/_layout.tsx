@@ -17,7 +17,7 @@ import { SoundEffectsProvider } from "@/providers/sfx-provider";
 import { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { ColorSchemeName, Platform } from "react-native";
+import { AppState, ColorSchemeName, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 function AppContent({ colorScheme }: { colorScheme: ColorSchemeName }) {
@@ -173,6 +173,14 @@ export default function RootLayout() {
 
   //const navigation = useNavigation();
   const router = useRouter();
+  useEffect(() => {
+    if (!me || !roomCode) return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+      }
+    });
+    return () => sub.remove();
+  }, [roomCode]);
 
   // lobby stuff
 
@@ -445,7 +453,12 @@ export default function RootLayout() {
   // player-view stuff
   useEffect(() => {
     if (!me || !roundId || !roomCode) return;
-    (async () => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        refreshData();
+      }
+    });
+    const refreshData = async () => {
       console.log("calling endpoints to get round data for player-view");
       const { data: roomState } = await supabase.functions.invoke("endpoints", {
         body: {
@@ -459,7 +472,7 @@ export default function RootLayout() {
       const { data: submissions } = await supabase
         .from("round_submissions")
         .select(
-          "profiles(display_name, avatar, id), id, round_submission_items(answer_cards(text))"
+          "profiles(display_name, avatar, id), id, round_submission_items(answer_cards(text)), revealed"
         )
         .eq("round_id", roundId);
       const submissionCards = submissions?.map((submission: any) => {
@@ -483,7 +496,7 @@ export default function RootLayout() {
           texts: submission.round_submission_items.map(
             (rsi: any) => rsi.answer_cards.text
           ),
-          revealed: false,
+          revealed: submission.revealed,
           playerId: submission.profiles.id,
         })) || [];
       setRoundData(
@@ -503,7 +516,11 @@ export default function RootLayout() {
         },
         ...(submissionCards ? submissionCards : []),
       ]);
-    })();
+    };
+    refreshData();
+    return () => {
+      sub.remove();
+    };
   }, [me, roomCode, roundId]);
 
   if (Platform.OS == "web") {

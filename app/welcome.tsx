@@ -35,8 +35,6 @@ const { height } = Dimensions.get("window");
 export default function WelcomeScreen({
   onCreateGame,
   onJoinGame,
-  onPassAndPlay,
-  onHowToPlay,
   appName = "Tabletop",
   tagline = "A terrible game for terribly funny people.",
 }: {
@@ -50,9 +48,7 @@ export default function WelcomeScreen({
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
   const router = useRouter();
-  const [mounted, setMounted] = React.useState(true);
   const toPhase = useGameStore((state) => state.toPhase);
-  const [centerOpen, setCenterOpen] = React.useState(false);
   const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const room_code = useGameStore((state) => state.settings.roomCode);
