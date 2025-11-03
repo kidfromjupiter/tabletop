@@ -26,6 +26,7 @@ export type GameSettings = {
   roundLimit: number; // 0 = unlimited
   scoreLimit: number; // 0 = unlimited
   handSize: number; // e.g., 10
+  gameFinished?: boolean;
   packs: Pack[]; // pack IDs or names
 };
 
@@ -142,6 +143,7 @@ const initialSettings: GameSettings = {
   scoreLimit: 10,
   handSize: 10,
   packs: [],
+  gameFinished: false,
 };
 const initialState: Omit<
   StoreState,

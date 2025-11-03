@@ -120,7 +120,6 @@ export function SoundEffectsProvider({ children }: { children: ReactNode }) {
     if (Platform.OS === "web" || !setAudioModeAsyncSafe) return;
     setAudioModeAsyncSafe({
       playsInSilentMode: true,
-      interruptionModeAndroid: "duckOthers",
       interruptionMode: "mixWithOthers",
       shouldPlayInBackground: false,
     }).catch((err: unknown) => {

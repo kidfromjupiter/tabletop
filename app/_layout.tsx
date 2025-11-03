@@ -238,6 +238,7 @@ export default function RootLayout() {
       })
       .on("broadcast", { event: "GAME_FINISHED" }, (msg: any) => {
         console.log("GAME_FINISHED event received:", msg);
+        updateSettings({ gameFinished: true });
         router.navigate("/winner-screen");
       })
 
@@ -469,12 +470,13 @@ export default function RootLayout() {
           },
         },
       });
-      const { data: submissions } = await supabase
+      const { data: submissions, error } = await supabase
         .from("round_submissions")
         .select(
           "profiles(display_name, avatar, id), id, round_submission_items(answer_cards(text)), revealed"
         )
         .eq("round_id", roundId);
+      if (error) return;
       const submissionCards = submissions?.map((submission: any) => {
         if (submission.profiles.id == me.id) {
           // TODO: only works for 1 card submissions
@@ -499,23 +501,25 @@ export default function RootLayout() {
           revealed: submission.revealed,
           playerId: submission.profiles.id,
         })) || [];
-      setRoundData(
-        roomState.round.id || "",
-        roomState.round.prompt.text,
-        roomState.round.pick_count,
-        roomState.round.judge_user_id,
-        submissionsForStore
-      );
+      if (roomState.round) {
+        setRoundData(
+          roomState.round?.id || "",
+          roomState.round.prompt.text,
+          roomState.round.pick_count,
+          roomState.round.judge_user_id,
+          submissionsForStore
+        );
+        setCards([
+          {
+            id: roomState.round.prompt.id,
+            text: roomState.round.prompt.text,
+            prompt: true,
+          },
+          ...(submissionCards ? submissionCards : []),
+        ]);
+      }
       setPacks(roomState.room.packs);
       setHand(roomState.my_hand);
-      setCards([
-        {
-          id: roomState.round.prompt.id,
-          text: roomState.round.prompt.text,
-          prompt: true,
-        },
-        ...(submissionCards ? submissionCards : []),
-      ]);
     };
     refreshData();
     return () => {

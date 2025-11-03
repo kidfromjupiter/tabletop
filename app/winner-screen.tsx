@@ -7,6 +7,7 @@ import React, { useEffect } from "react";
 import {
   FlatList,
   Image,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -40,15 +41,25 @@ function LottieConfetti({ source }: { source?: any }) {
   return (
     <View
       pointerEvents="none"
-      style={[StyleSheet.absoluteFill, { zIndex: Infinity }]}
+      style={[StyleSheet.absoluteFill, { zIndex: 9999 }]}
     >
-      <LottieView
-        source={source}
-        autoPlay
-        loop={false}
-        style={[StyleSheet.absoluteFill]}
-        resizeMode="cover"
-      />
+      {Platform.OS == "web" ? (
+        // web doesn't like resizeMode property
+        <LottieView
+          source={source}
+          autoPlay
+          loop={false}
+          //style={[StyleSheet.absoluteFill]}
+        />
+      ) : (
+        <LottieView
+          source={source}
+          autoPlay
+          loop={false}
+          //style={[StyleSheet.absoluteFill]}
+          resizeMode={"cover"}
+        />
+      )}
     </View>
   );
 }
@@ -143,7 +154,6 @@ export default function WinnerScreen() {
   );
   const winner = players[0];
 
-  if (!winner) return null;
   console.log("Rendering WinnerScreen for winner:", winner);
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
@@ -166,12 +176,13 @@ export default function WinnerScreen() {
   }));
   const router = useRouter();
 
+  if (!winner) return null;
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: isDark ? "#0E0E0E" : "#F6F6F8" }]}
     >
       <LottieConfetti
-        source={require("../assets/lottie/confetti on transparent background.json")}
+        source={require("../assets/lottie/mobile_confetti.json")}
       />
 
       <Header title="Winner Winner!" isDark={isDark} />

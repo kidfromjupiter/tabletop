@@ -11,6 +11,9 @@ export function useJudgeActions() {
   const setMe = useGameStore((state) => state.setMe);
   const setSettings = useGameStore((state) => state.updateSettings);
   const submitForPlayer = useGameStore((state) => state.submitForPlayer);
+  const gameFinished = useGameStore(
+    (state) => state.settings.gameFinished || false
+  );
   const pathname = usePathname();
 
   const [prompt, setPrompt] = useState("Loading prompt...");
@@ -76,8 +79,9 @@ export function useJudgeActions() {
         },
       },
     });
-    if (pathname !== "/winner-screen") {
+    if (!gameFinished) {
       // winner screen is routed to automatically from the listener. So we avoid double navigation.
+      console.log("Navigating to results");
       router.navigate("/round-results");
     }
   };
