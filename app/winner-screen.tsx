@@ -56,7 +56,7 @@ function LottieConfetti({ source }: { source?: any }) {
           source={source}
           autoPlay
           loop={false}
-          //style={[StyleSheet.absoluteFill]}
+          style={[StyleSheet.absoluteFill]}
           resizeMode={"cover"}
         />
       )}
