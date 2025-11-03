@@ -79,11 +79,6 @@ export function useJudgeActions() {
         },
       },
     });
-    if (!gameFinished) {
-      // winner screen is routed to automatically from the listener. So we avoid double navigation.
-      console.log("Navigating to results");
-      router.navigate("/round-results");
-    }
   };
 
   const fetchRoomState = async () => {

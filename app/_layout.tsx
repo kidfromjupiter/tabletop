@@ -236,10 +236,22 @@ export default function RootLayout() {
           broadcast: { ack: true }, // request ack, optional
         },
       })
-      .on("broadcast", { event: "GAME_FINISHED" }, (msg: any) => {
-        console.log("GAME_FINISHED event received:", msg);
-        updateSettings({ gameFinished: true });
-        router.navigate("/winner-screen");
+      // Shouldn't use. Creates race conditions
+
+      // .on("broadcast", { event: "GAME_FINISHED" }, (msg: any) => {
+      //   console.log("GAME_FINISHED event received:", msg);
+      //   updateSettings({ gameFinished: true });
+      //   router.navigate("/winner-screen");
+      // })
+
+      .on("broadcast", { event: "WINNER_PICKED" }, (msg: any) => {
+        console.log("WINNER_PICKED event received:", msg);
+        if (msg.payload.next_page == "winner-screen") {
+          router.navigate("/winner-screen");
+          updateSettings({ gameFinished: true });
+        } else {
+          router.navigate("/round-results");
+        }
       })
 
       .on("broadcast", { event: "KICK_PLAYER" }, (msg: any) => {
@@ -248,7 +260,7 @@ export default function RootLayout() {
         if (p.user_id === me?.id) {
           // I got kicked!
           leaveRoom();
-          router.replace("/welcome");
+          router.navigate("/welcome");
           showToast(" You have been kicked from the room.");
         }
       })
