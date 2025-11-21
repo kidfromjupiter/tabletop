@@ -1,0 +1,13 @@
+title: "Tabletop"
+description: >
+  Tabletop, the card game. Direct clone of the classic game "Cards against Humanity",
+  coded in React Native for mobile devices and a supabase backend and Expo.
+  Play with friends locally or online. With beautiful graphics, gestures and OTA,
+  Tabletop is the perfect way to enjoy a classic game with a modern twist.
+
+  Also available on http://tabletop.expo.app
+
+  Enjoy!
+status: "finished" # one of: active | abandoned | finished
+startedAt: "2024-10-01" # ISO dates are easiest
+thumbnail: "thumbnail.png" # path inside repo OR full URL
